@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Box, Paper, Typography, TextField, MenuItem, Button, Table, TableHead, TableRow, TableCell, TableBody, Chip, Grid, Alert, TableContainer } from '@mui/material';
 import api from '../api';
+import GradeStamp from '../components/GradeStamp';
 import { exportCsv } from '../exportCsv';
 
 function Stat({ label, value }) {
@@ -10,6 +11,17 @@ function Stat({ label, value }) {
       <Typography variant="h6" fontWeight={700}>{value}</Typography>
     </Paper>
   );
+}
+
+/* Mirrors the server grading_scales bands so the merit list stamps match
+ * the grades stored on individual marks. */
+function bandFor(pct) {
+  if (pct == null || Number.isNaN(pct)) return '';
+  if (pct >= 80) return 'A';
+  if (pct >= 65) return 'B';
+  if (pct >= 50) return 'C';
+  if (pct >= 40) return 'D';
+  return 'E';
 }
 
 export default function MeritList() {
@@ -80,7 +92,14 @@ export default function MeritList() {
                     <TableCell>{r.last_name} {r.first_name}</TableCell>
                     <TableCell>{r.admission_number || '—'}</TableCell>
                     <TableCell>{r.subjects}</TableCell>
-                    <TableCell>{fmt(r.average_percentage)}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box component="span" sx={{ fontFamily: (t) => t.typography.mono.fontFamily, fontWeight: 700 }}>
+                          {fmt(r.average_percentage)}
+                        </Box>
+                        <GradeStamp grade={bandFor(r.average_percentage)} size={32} />
+                      </Box>
+                    </TableCell>
                     <TableCell><Chip size="small" label={r.is_pass ? 'Pass' : 'Below pass mark'} color={r.is_pass ? 'success' : 'warning'} /></TableCell>
                   </TableRow>
                 ))}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Box, Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody, Chip, LinearProgress, TableContainer } from '@mui/material';
 import api from '../api';
+import GradeStamp from '../components/GradeStamp';
 
 export default function Progress() {
   const [data, setData] = useState(null);
@@ -54,7 +55,7 @@ export default function Progress() {
                             <TableCell>{m.learning_area}</TableCell>
                             <TableCell>{m.score}/{m.total}</TableCell>
                             <TableCell>{m.percentage.toFixed(1)}</TableCell>
-                            <TableCell>{m.grade || '—'}</TableCell>
+                            <TableCell><GradeStamp grade={m.grade} size={34} /></TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

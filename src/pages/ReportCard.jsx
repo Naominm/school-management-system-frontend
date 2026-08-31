@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Box, Paper, Typography, TextField, MenuItem, Button, Table, TableHead, TableRow, TableCell, TableBody, Alert, Divider, TableContainer } from '@mui/material';
 import api from '../api';
+import GradeStamp from '../components/GradeStamp';
 import { useAuth } from '../auth';
 
 export default function ReportCard() {
@@ -74,7 +75,7 @@ export default function ReportCard() {
                     <TableCell>{m.learning_area}</TableCell>
                     <TableCell>{m.score}/{m.total}</TableCell>
                     <TableCell>{pct(m)}</TableCell>
-                    <TableCell>{m.grade || '—'}</TableCell>
+                    <TableCell><GradeStamp grade={m.grade} size={34} /></TableCell>
                     <TableCell>{m.remarks || '—'}</TableCell>
                   </TableRow>
                 ))}
