@@ -14,6 +14,7 @@ import Messages from './pages/Messages';
 import Dashboard from './pages/Dashboard';
 import ResourcePage from './pages/ResourcePage';
 import Markbook from './pages/Markbook';
+import PlatformConsole from './pages/PlatformConsole';
 import Attendance from './pages/Attendance';
 import MeritList from './pages/MeritList';
 import ReportCard from './pages/ReportCard';
@@ -32,6 +33,7 @@ export default function App() {
           <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/markbook" element={<Markbook />} />
+            <Route path="/platform" element={<PlatformConsole />} />
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/merit-list" element={<MeritList />} />
             <Route path="/report-cards" element={<ReportCard />} />

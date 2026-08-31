@@ -18,6 +18,7 @@ import TimelineIcon from '@mui/icons-material/Timeline';
 import MailIcon from '@mui/icons-material/Mail';
 import KeyIcon from '@mui/icons-material/Key';
 import TableRowsIcon from '@mui/icons-material/TableRows';
+import ApartmentIcon from '@mui/icons-material/Apartment';
 import { useAuth } from '../auth';
 import RESOURCES from '../resources';
 
@@ -50,6 +51,7 @@ export default function AppLayout() {
   const [open, setOpen] = useState(false);
 
   const specials = [
+    { to: '/platform', label: 'Platform console', icon: <ApartmentIcon fontSize="small" />, roles: ['super_admin'] },
     { to: '/', label: 'Dashboard', icon: <DashboardIcon fontSize="small" />, roles: ['admin', 'teacher', 'staff', 'parent', 'learner'] },
     { to: '/markbook', label: 'Markbook', icon: <GradeIcon fontSize="small" />, roles: ['admin', 'teacher'] },
     { to: '/attendance', label: 'Attendance', icon: <ChecklistIcon fontSize="small" />, roles: ['admin', 'teacher'] },
