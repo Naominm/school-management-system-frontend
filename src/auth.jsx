@@ -10,8 +10,8 @@ export function AuthProvider({ children }) {
     return raw ? JSON.parse(raw) : null;
   });
 
-  async function login(email, password) {
-    const { data } = await api.post('/auth/login', { email, password });
+  async function login(email, password, school_id) {
+    const { data } = await api.post('/auth/login', { email, password, school_id });
     localStorage.setItem('sms_token', data.token);
     localStorage.setItem('sms_user', JSON.stringify(data.user));
     setUser(data.user);

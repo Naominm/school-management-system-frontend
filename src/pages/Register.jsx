@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Box, Paper, Typography, TextField, Button, Alert, MenuItem, Link } from '@mui/material';
 import SchoolIcon from '@mui/icons-material/School';
@@ -7,8 +7,17 @@ import api from '../api';
 export default function Register() {
   const [form, setForm] = useState({
     role: 'parent', full_name: '', email: '', admission_number: '',
-    password: '', confirm_password: '',
+    password: '', confirm_password: '', school_id: '',
   });
+  const [schools, setSchools] = useState([]);
+
+  /* Registration is per school: the admission number is resolved inside the
+   * school chosen here, and the account is created in it. */
+  useEffect(() => {
+    api.get('/auth/schools/public')
+      .then((r) => setSchools(r.data.filter((x) => !x.locked)))
+      .catch(() => setSchools([]));
+  }, []);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
@@ -62,6 +71,15 @@ export default function Register() {
           <>
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
             <form onSubmit={submit}>
+              <TextField
+                select label="School" fullWidth required margin="normal"
+                value={form.school_id} onChange={set('school_id')}
+                helperText="Locked schools are not accepting registrations."
+              >
+                {schools.map((s) => (
+                  <MenuItem key={s.id} value={s.id}>{s.name} ({s.code})</MenuItem>
+                ))}
+              </TextField>
               <TextField select label="I am a" fullWidth margin="normal" value={form.role} onChange={set('role')}>
                 <MenuItem value="parent">Parent / Guardian</MenuItem>
                 <MenuItem value="learner">Learner</MenuItem>
@@ -83,7 +101,7 @@ export default function Register() {
                 error={!!form.confirm_password && form.confirm_password !== form.password}
                 helperText={form.confirm_password && form.confirm_password !== form.password ? 'Passwords do not match' : ' '}
               />
-              <Button type="submit" variant="contained" fullWidth size="large" sx={{ mt: 1 }} disabled={busy}>
+              <Button type="submit" variant="contained" fullWidth size="large" sx={{ mt: 1 }} disabled={busy || !form.school_id}>
                 {busy ? 'Creating…' : 'Create account'}
               </Button>
             </form>
