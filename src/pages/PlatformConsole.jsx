@@ -6,6 +6,8 @@ import {
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import api from '../api';
 
 const blank = { name: '', code: '', motto: '', crest_colour: '#C9A227' };
@@ -21,6 +23,11 @@ export default function PlatformConsole() {
   const [lockReason, setLockReason] = useState('');
   const [adminFor, setAdminFor] = useState(null);
   const [admin, setAdmin] = useState(blankAdmin);
+  const [editFor, setEditFor] = useState(null);
+  const [editForm, setEditForm] = useState(blank);
+  const [deleteFor, setDeleteFor] = useState(null);
+  const [impact, setImpact] = useState(null);
+  const [confirmCode, setConfirmCode] = useState('');
 
   async function load() {
     setBusy(true); setError('');
@@ -48,6 +55,36 @@ export default function PlatformConsole() {
   async function unlock(s) {
     try { await api.post(`/platform/schools/${s.id}/unlock`); setOk(`${s.name} unlocked`); load(); }
     catch (e) { setError(e.response?.data?.error || 'Could not unlock school'); }
+  }
+
+  function openEdit(s) {
+    setEditFor(s);
+    setEditForm({ name: s.name, code: s.code, motto: s.motto || '', crest_colour: s.crest_colour || '#C9A227' });
+  }
+
+  async function saveEdit(e) {
+    e.preventDefault();
+    try {
+      await api.put(`/platform/schools/${editFor.id}`, editForm);
+      setEditFor(null); setOk('School updated'); load();
+    } catch (e) { setError(e.response?.data?.error || 'Could not update school'); }
+  }
+
+  /* Deleting cascades across every school-owned table, so show exactly what
+   * would go before asking the administrator to type the code. */
+  async function openDelete(s) {
+    setDeleteFor(s); setImpact(null); setConfirmCode('');
+    try { setImpact((await api.get(`/platform/schools/${s.id}/impact`)).data.impact); }
+    catch { setImpact(null); }
+  }
+
+  async function confirmDelete() {
+    try {
+      const { data } = await api.delete(`/platform/schools/${deleteFor.id}`, { data: { confirm: confirmCode } });
+      setDeleteFor(null);
+      setOk(`${data.school.name} deleted — removed ${data.removed.students} students, ${data.removed.users} accounts, ${data.removed.marks} marks`);
+      load();
+    } catch (e) { setError(e.response?.data?.error || 'Could not delete school'); }
   }
 
   async function createAdmin(e) {
@@ -123,6 +160,8 @@ export default function PlatformConsole() {
                   ? <Button size="small" color="success" startIcon={<LockOpenIcon />} onClick={() => unlock(s)}>Unlock</Button>
                   : <Button size="small" color="error" startIcon={<LockIcon />} onClick={() => { setLockFor(s); setLockReason(''); }}>Lock</Button>}
                 <Button size="small" onClick={() => { setAdminFor(s); setAdmin(blankAdmin); }}>Add administrator</Button>
+                <Button size="small" startIcon={<EditIcon />} onClick={() => openEdit(s)}>Edit</Button>
+                <Button size="small" color="error" startIcon={<DeleteForeverIcon />} onClick={() => openDelete(s)}>Delete</Button>
               </Stack>
             </Paper>
           </Grid>
@@ -171,6 +210,76 @@ export default function PlatformConsole() {
             <Button type="submit" variant="contained">Create administrator</Button>
           </DialogActions>
         </Box>
+      </Dialog>
+      <Dialog open={!!editFor} onClose={() => setEditFor(null)} fullWidth maxWidth="sm">
+        <DialogTitle>Edit {editFor?.name}</DialogTitle>
+        <Box component="form" onSubmit={saveEdit}>
+          <DialogContent>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField size="small" label="Name" required value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+              <TextField size="small" label="Code" required value={editForm.code}
+                onChange={(e) => setEditForm({ ...editForm, code: e.target.value })}
+                helperText="Shown on the sign-in picker and on school cards" />
+              <TextField size="small" label="Motto" value={editForm.motto}
+                onChange={(e) => setEditForm({ ...editForm, motto: e.target.value })} />
+              <Stack direction="row" spacing={2} alignItems="center">
+                <TextField size="small" label="Crest colour" sx={{ flex: 1 }} value={editForm.crest_colour}
+                  onChange={(e) => setEditForm({ ...editForm, crest_colour: e.target.value })}
+                  helperText="Hex, e.g. #C9A227" />
+                <input type="color" aria-label="Pick crest colour"
+                  value={/^#[0-9a-fA-F]{6}$/.test(editForm.crest_colour) ? editForm.crest_colour : '#C9A227'}
+                  onChange={(e) => setEditForm({ ...editForm, crest_colour: e.target.value })}
+                  style={{ width: 48, height: 40, border: 'none', background: 'none', cursor: 'pointer' }} />
+                <Box sx={{ width: 44, height: 44, borderRadius: '10px', flexShrink: 0,
+                           bgcolor: /^#[0-9a-fA-F]{6}$/.test(editForm.crest_colour) ? editForm.crest_colour : 'primary.main',
+                           color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                           fontFamily: 'Fraunces, Georgia, serif', fontWeight: 700 }}>
+                  {editForm.code || '—'}
+                </Box>
+              </Stack>
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setEditFor(null)}>Cancel</Button>
+            <Button type="submit" variant="contained">Save changes</Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
+
+      <Dialog open={!!deleteFor} onClose={() => setDeleteFor(null)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ color: 'error.main' }}>Delete {deleteFor?.name}?</DialogTitle>
+        <DialogContent>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            This permanently removes the school and everything belonging to it. It cannot be undone.
+          </Alert>
+          {impact ? (
+            <>
+              <Typography variant="subtitle2" gutterBottom>This will delete:</Typography>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                {[['students', impact.students], ['staff & parent accounts', impact.users],
+                  ['classes', impact.classes], ['marks', impact.marks],
+                  ['attendance records', impact.attendance], ['fee records', impact.fees]]
+                  .map(([label, n]) => (
+                    <Chip key={label} size="small" color={n ? 'error' : 'default'}
+                          label={`${n} ${label}`} variant={n ? 'filled' : 'outlined'} />
+                  ))}
+              </Stack>
+            </>
+          ) : <LinearProgress sx={{ mb: 2 }} />}
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            Type <strong>{deleteFor?.code}</strong> to confirm.
+          </Typography>
+          <TextField autoFocus fullWidth size="small" value={confirmCode}
+            onChange={(e) => setConfirmCode(e.target.value)} placeholder={deleteFor?.code} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteFor(null)}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={confirmDelete}
+            disabled={confirmCode.trim().toLowerCase() !== String(deleteFor?.code || '').toLowerCase()}>
+            Delete permanently
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );
