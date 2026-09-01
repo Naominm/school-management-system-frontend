@@ -63,8 +63,9 @@ export function markbookPdf({ className, term, year, students, areas, scoreOf, f
 }
 
 /** Merit list: ranked averages. */
-export function meritListPdf({ className, term, year, rows, summary, filename }) {
-  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+export function meritListPdf({ className, term, year, rows, summary, areas = [], subjectSummary = [], filename }) {
+  const wide = areas.length > 3;
+  const doc = new jsPDF({ orientation: wide ? 'landscape' : 'portrait', unit: 'pt', format: 'a4' });
   header(doc, `Merit list — ${className}`, `Term ${term} · ${year}`);
   doc.setFontSize(9);
   doc.setTextColor(90, 100, 120);
@@ -76,11 +77,30 @@ export function meritListPdf({ className, term, year, rows, summary, filename })
     40, 82
   );
   doc.setTextColor(0, 0, 0);
-  table(doc,
-    ['#', 'Adm. No.', 'Learner', 'Subjects', 'Average %', 'Result'],
-    rows.map((r) => [r.position, r.admission_number || '—', `${r.last_name} ${r.first_name}`,
-      r.subjects, r.average_percentage?.toFixed(1) ?? '—', r.is_pass ? 'Pass' : 'Below pass mark']),
-    98);
+
+  // Score and grade share a cell so the sheet stays readable across many subjects.
+  const head = ['#', 'Adm. No.', 'Learner', ...areas.map((a) => a.name), 'Avg %', 'Result'];
+  const body = rows.map((r) => [
+    r.position, r.admission_number || '—', `${r.last_name} ${r.first_name}`,
+    ...areas.map((a) => {
+      const m = r.marks?.[a.id];
+      return m ? `${m.score}${m.grade ? ' ' + m.grade : ''}` : '—';
+    }),
+    r.average_percentage?.toFixed(1) ?? '—',
+    r.is_pass ? 'Pass' : 'Below',
+  ]);
+  const foot = subjectSummary.length
+    ? [['', '', 'Class average', ...areas.map((a) => {
+        const x = subjectSummary.find((y) => y.id === a.id);
+        return x?.average != null ? `${x.average.toFixed(1)}%` : '—';
+      }), s.class_average != null ? s.class_average.toFixed(1) : '—', '']]
+    : undefined;
+
+  table(doc, head, body, 98, {
+    foot,
+    footStyles: { fillColor: PAPER, textColor: INK, fontStyle: 'bold', fontSize: 8 },
+    columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 58 }, 2: { cellWidth: 104 } },
+  });
   footer(doc);
   doc.save(`${filename}.pdf`);
 }

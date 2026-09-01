@@ -44,6 +44,7 @@ export default function MeritList() {
   }
 
   const fmt = (v) => (v == null ? '—' : `${Number(v).toFixed(1)}%`);
+  const areas = data?.learning_areas || [];
 
   return (
     <Box>
@@ -56,17 +57,30 @@ export default function MeritList() {
         <TextField size="small" label="Year" type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} sx={{ width: 120 }} />
         <Button variant="contained" onClick={load} disabled={!classId}>Load</Button>
         <Button variant="outlined" disabled={!data?.merit_list?.length}
-          onClick={() => exportCsv(`merit-list-term${term}-${year}`, [
-            { key: 'position', label: 'Position' }, { key: 'last_name', label: 'Surname' },
-            { key: 'first_name', label: 'First name' }, { key: 'admission_number', label: 'Adm No' },
-            { key: 'subjects', label: 'Subjects' }, { key: 'average_percentage', label: 'Average %' },
-          ], data.merit_list)}>
+          onClick={() => exportCsv(`merit-list-term${term}-${year}`,
+            [{ key: 'position', label: 'Position' }, { key: 'last_name', label: 'Surname' },
+             { key: 'first_name', label: 'First name' }, { key: 'admission_number', label: 'Adm No' },
+             ...areas.flatMap((a) => [
+               { key: `s_${a.id}`, label: `${a.name} score` },
+               { key: `g_${a.id}`, label: `${a.name} grade` }]),
+             { key: 'subjects', label: 'Subjects sat' },
+             { key: 'average_percentage', label: 'Average %' },
+             { key: 'result', label: 'Result' }],
+            data.merit_list.map((r) => {
+              const row = { ...r, result: r.is_pass ? 'Pass' : 'Below pass mark',
+                average_percentage: r.average_percentage?.toFixed(1) ?? '' };
+              for (const a of areas) {
+                row[`s_${a.id}`] = r.marks?.[a.id]?.score ?? '';
+                row[`g_${a.id}`] = r.marks?.[a.id]?.grade ?? '';
+              }
+              return row;
+            }))}>
           Export CSV
         </Button>
         <Button variant="outlined" disabled={!data?.merit_list?.length}
           onClick={() => meritListPdf({
             className: classes.find((c) => String(c.id) === String(classId))?.name || 'Class',
-            term, year, rows: data.merit_list, summary: data.summary,
+            term, year, rows: data.merit_list, summary: data.summary, areas, subjectSummary: data.subject_summary || [],
             filename: `merit-list-term${term}-${year}`,
           })}>
           Export PDF
@@ -89,8 +103,12 @@ export default function MeritList() {
                   <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Learner</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Adm. No.</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Subjects</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Average</TableCell>
+                  {areas.map((a) => (
+                    <TableCell key={a.id} align="center" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
+                      {a.name}
+                    </TableCell>
+                  ))}
+                  <TableCell align="center" sx={{ fontWeight: 700 }}>Average</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Result</TableCell>
                 </TableRow>
               </TableHead>
@@ -100,8 +118,22 @@ export default function MeritList() {
                     <TableCell>{r.position}</TableCell>
                     <TableCell>{r.last_name} {r.first_name}</TableCell>
                     <TableCell>{r.admission_number || '—'}</TableCell>
-                    <TableCell>{r.subjects}</TableCell>
-                    <TableCell>
+                    {areas.map((a) => {
+                      const m = r.marks?.[a.id];
+                      return (
+                        <TableCell key={a.id} align="center">
+                          {m ? (
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
+                              <Box component="span" sx={{ fontFamily: (t) => t.typography.mono.fontFamily, fontWeight: 600 }}>
+                                {m.score}
+                              </Box>
+                              <GradeStamp grade={m.grade} size={28} />
+                            </Box>
+                          ) : <Box component="span" sx={{ color: 'text.disabled' }}>—</Box>}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell align="center">
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Box component="span" sx={{ fontFamily: (t) => t.typography.mono.fontFamily, fontWeight: 700 }}>
                           {fmt(r.average_percentage)}
