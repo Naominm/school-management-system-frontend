@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Box, Paper, Typography, TextField, MenuItem, Button, Table, TableHead, TableRow, TableCell, TableBody, Chip, Grid, Alert, TableContainer } from '@mui/material';
 import api from '../api';
 import GradeStamp from '../components/GradeStamp';
+import { meritListPdf } from '../exportPdf';
 import { exportCsv } from '../exportCsv';
 
 function Stat({ label, value }) {
@@ -61,6 +62,14 @@ export default function MeritList() {
             { key: 'subjects', label: 'Subjects' }, { key: 'average_percentage', label: 'Average %' },
           ], data.merit_list)}>
           Export CSV
+        </Button>
+        <Button variant="outlined" disabled={!data?.merit_list?.length}
+          onClick={() => meritListPdf({
+            className: classes.find((c) => String(c.id) === String(classId))?.name || 'Class',
+            term, year, rows: data.merit_list, summary: data.summary,
+            filename: `merit-list-term${term}-${year}`,
+          })}>
+          Export PDF
         </Button>
       </Paper>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}

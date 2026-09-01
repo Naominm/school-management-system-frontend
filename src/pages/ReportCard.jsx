@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Box, Paper, Typography, TextField, MenuItem, Button, Table, TableHead, TableRow, TableCell, TableBody, Alert, Divider, TableContainer } from '@mui/material';
 import api from '../api';
+import { exportCsv } from '../exportCsv';
+import { reportCardsPdf } from '../exportPdf';
 import GradeStamp from '../components/GradeStamp';
 import { useAuth } from '../auth';
 
@@ -36,6 +38,65 @@ export default function ReportCard() {
   }
 
   const pct = (m) => ((m.score / m.total) * 100).toFixed(1);
+  const [classId, setClassId] = useState('');
+  const [classes, setClasses] = useState([]);
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  useEffect(() => {
+    if (!staff) return;
+    api.get('/classes').then((r) => setClasses(r.data)).catch(() => {});
+  }, [staff]);
+
+  const className = () => classes.find((c) => String(c.id) === String(classId))?.name || 'Class';
+
+  /* One request for the whole class, rather than one per learner. */
+  async function fetchClassCards() {
+    const { data } = await api.get('/report-cards', { params: { class_id: classId, term, academic_year: year } });
+    return data;
+  }
+
+  async function exportClassPdf() {
+    setBulkBusy(true); setError('');
+    try {
+      const d = await fetchClassCards();
+      if (!d.students.length) { setError('That class has no learners.'); return; }
+      reportCardsPdf({ className: d.class.name, term, year, students: d.students,
+        filename: `report-cards-${d.class.name.replace(/[^\w-]+/g, '_')}-T${term}-${year}` });
+    } catch (e) { setError(e.response?.data?.error || 'Could not export report cards'); }
+    finally { setBulkBusy(false); }
+  }
+
+  async function exportClassCsv() {
+    setBulkBusy(true); setError('');
+    try {
+      const d = await fetchClassCards();
+      if (!d.students.length) { setError('That class has no learners.'); return; }
+      // One row per learner per subject — the shape spreadsheets expect.
+      const rows = [];
+      for (const st of d.students) {
+        if (!st.marks.length) {
+          rows.push({ adm: st.admission_number || '', name: `${st.last_name} ${st.first_name}`,
+            subject: '', score: '', total: '', percentage: '', grade: '',
+            average: st.average_percentage?.toFixed(1) ?? '', position: st.position ?? '' });
+          continue;
+        }
+        for (const m of st.marks) {
+          rows.push({ adm: st.admission_number || '', name: `${st.last_name} ${st.first_name}`,
+            subject: m.learning_area, score: m.score, total: m.total,
+            percentage: m.percentage?.toFixed(1) ?? '', grade: m.grade || '',
+            average: st.average_percentage?.toFixed(1) ?? '', position: st.position ?? '' });
+        }
+      }
+      exportCsv(`report-cards-${d.class.name.replace(/[^\w-]+/g, '_')}-T${term}-${year}`, [
+        { key: 'adm', label: 'Admission No.' }, { key: 'name', label: 'Learner' },
+        { key: 'subject', label: 'Learning area' }, { key: 'score', label: 'Score' },
+        { key: 'total', label: 'Out of' }, { key: 'percentage', label: '%' },
+        { key: 'grade', label: 'Grade' }, { key: 'average', label: 'Learner average %' },
+        { key: 'position', label: 'Position' },
+      ], rows);
+    } catch (e) { setError(e.response?.data?.error || 'Could not export report cards'); }
+    finally { setBulkBusy(false); }
+  }
 
   return (
     <Box>
@@ -50,6 +111,24 @@ export default function ReportCard() {
         <TextField size="small" label="Year" type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} sx={{ width: 120 }} />
         <Button variant="contained" onClick={() => load()} disabled={staff && !studentId}>Load</Button>
       </Paper>
+      {staff && (
+        <Paper sx={{ p: 2, mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>Whole class</Typography>
+          <TextField select size="small" label="Class" value={classId}
+            onChange={(e) => setClassId(e.target.value)} sx={{ minWidth: 200 }}>
+            {classes.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
+          </TextField>
+          <Button variant="outlined" disabled={!classId || bulkBusy} onClick={exportClassPdf}>
+            {bulkBusy ? 'Preparing…' : 'Export all as PDF'}
+          </Button>
+          <Button variant="outlined" disabled={!classId || bulkBusy} onClick={exportClassCsv}>
+            Export all as CSV
+          </Button>
+          <Typography variant="caption" color="text.secondary">
+            One page per learner, for Term {term} {year}.
+          </Typography>
+        </Paper>
+      )}
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {report && (
         <Paper sx={{ p: 3 }}>

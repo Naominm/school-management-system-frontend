@@ -4,8 +4,11 @@ import {
   TableRow, TableCell, TableBody, LinearProgress, Alert, TableContainer, Tooltip,
 } from '@mui/material';
 import api from '../api';
+import { exportCsv } from '../exportCsv';
+import { markbookPdf } from '../exportPdf';
 import { useAuth } from '../auth';
 import GradeStamp from '../components/GradeStamp';
+import { useRef } from 'react';
 
 const ALL_SUBJECTS = '__all__';
 
@@ -30,6 +33,9 @@ export default function Markbook() {
    * full grid refetch each time. */
   const [edits, setEdits] = useState({});
   const dirty = Object.keys(edits).length;
+  const [importing, setImporting] = useState(false);
+  const [importReport, setImportReport] = useState(null);
+  const fileRef = useRef(null);
 
   /* Management picks from every class; a teacher picks only from the classes
    * they teach in or are class teacher of — both come from /teacher/dashboard. */
@@ -125,6 +131,72 @@ export default function Markbook() {
 
   function discard() { setEdits({}); setError(''); setOk(''); }
 
+  const className = classes.find((c) => String(c.id) === String(classId))?.name || 'class';
+  const stamp = `${className.replace(/[^\w-]+/g, '_')}-T${term}-${year}`;
+  const scoreOf = (sid, laid) => { const v = cellValue(sid, laid); return v === '' ? null : Number(v); };
+
+  function exportMarkbookCsv() {
+    if (!grid) return;
+    const cols = [{ key: 'adm', label: 'Admission No.' }, { key: 'name', label: 'Learner' },
+      ...columns.map((la) => ({ key: `la_${la.id}`, label: la.name })), { key: 'avg', label: 'Average' }];
+    const rows = grid.students.map((st) => {
+      const r = { adm: st.admission_number || '', name: `${st.last_name} ${st.first_name}` };
+      const nums = [];
+      for (const la of columns) {
+        const v = scoreOf(st.id, la.id);
+        r[`la_${la.id}`] = v ?? '';
+        if (v != null) nums.push(v);
+      }
+      r.avg = nums.length ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1) : '';
+      return r;
+    });
+    exportCsv(`markbook-${stamp}`, cols, rows);
+  }
+
+  function exportMarkbookPdf() {
+    if (!grid) return;
+    markbookPdf({ className, term, year, students: grid.students, areas: columns,
+      scoreOf: (sid, laid) => scoreOf(sid, laid), filename: `markbook-${stamp}` });
+  }
+
+  async function downloadTemplate() {
+    try {
+      const res = await api.get('/marks/template',
+        { params: { class_id: classId, term, academic_year: year }, responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url; a.download = `markbook-template-${stamp}.xlsx`; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      const msg = e.response?.data instanceof Blob ? await e.response.data.text() : null;
+      setError(msg ? (JSON.parse(msg).error || 'Could not build the template') : 'Could not build the template');
+    }
+  }
+
+  async function importFile(file) {
+    if (!file) return;
+    setImporting(true); setError(''); setOk(''); setImportReport(null);
+    try {
+      const b64 = await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result).split(',')[1]);
+        fr.onerror = reject;
+        fr.readAsDataURL(file);
+      });
+      const { data } = await api.post('/marks/import',
+        { class_id: classId, term, academic_year: year, data: b64 });
+      setImportReport(data);
+      setOk(`Imported ${data.imported} marks (${data.created} new, ${data.updated} updated)`);
+      setEdits({});
+      await load();
+    } catch (e) {
+      setError(e.response?.data?.error || 'Could not import that file');
+    } finally {
+      setImporting(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  }
+
   async function saveAll() {
     if (!dirty || invalid.length) return;
     const payload = Object.entries(edits)
@@ -204,6 +276,35 @@ export default function Markbook() {
             {saving ? 'Saving…' : 'Save marks'}
           </Button>
         </Paper>
+      )}
+      {grid && !busy && (
+        <Paper sx={{ p: 1.5, mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, mr: 1 }}>Spreadsheet</Typography>
+          <Button size="small" onClick={downloadTemplate}>Download template (.xlsx)</Button>
+          <Button size="small" component="label" disabled={importing}>
+            {importing ? 'Importing…' : 'Import marks (.xlsx)'}
+            <input ref={fileRef} hidden type="file"
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              onChange={(e) => importFile(e.target.files?.[0])} />
+          </Button>
+          <Box sx={{ flex: 1 }} />
+          <Typography variant="body2" sx={{ fontWeight: 600, mr: 1 }}>Export</Typography>
+          <Button size="small" onClick={exportMarkbookPdf}>PDF</Button>
+          <Button size="small" onClick={exportMarkbookCsv}>CSV</Button>
+        </Paper>
+      )}
+      {importReport && (importReport.errors?.length > 0 || importReport.blank > 0) && (
+        <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setImportReport(null)}>
+          Imported {importReport.imported}. {importReport.blank} blank cell(s) skipped.
+          {importReport.errors?.length > 0 && (
+            <>
+              {' '}{importReport.errors.length} row problem(s):
+              <ul style={{ margin: '6px 0 0 18px' }}>
+                {importReport.errors.slice(0, 8).map((x, i) => <li key={i}>Row {x.row}: {x.reason}</li>)}
+              </ul>
+            </>
+          )}
+        </Alert>
       )}
       {ok && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setOk('')}>{ok}</Alert>}
       {notice && <Alert severity="info" sx={{ mb: 2 }} onClose={() => setNotice('')}>{notice}</Alert>}
