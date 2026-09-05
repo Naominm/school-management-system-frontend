@@ -41,20 +41,49 @@ export function BrandingProvider({ children }) {
 
 export const useBranding = () => useContext(BrandingContext);
 
-/** Fetch the logo as a data URL, for embedding into generated PDFs. */
-export async function logoDataUrl(url) {
+/**
+ * Fetch the logo and hand back a PNG data URL for embedding in a PDF.
+ *
+ * jsPDF only embeds raster formats reliably, so whatever was uploaded — PNG,
+ * JPEG, WEBP, GIF or SVG — is redrawn onto a canvas and exported as PNG. The
+ * blob is loaded through an object URL, which counts as same-origin, so the
+ * canvas is never tainted and toDataURL is allowed even though the image is
+ * served from the API host.
+ *
+ * Returns null on any failure; every caller treats that as "no logo" and the
+ * document is produced without one rather than failing.
+ */
+export async function logoDataUrl(url, maxSize = 512) {
   if (!url) return null;
+  let objectUrl = null;
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
     const blob = await res.blob();
-    // jsPDF cannot rasterise SVG; skip it rather than produce a broken image.
-    if (blob.type === 'image/svg+xml') return null;
-    return await new Promise((resolve) => {
-      const fr = new FileReader();
-      fr.onload = () => resolve(String(fr.result));
-      fr.onerror = () => resolve(null);
-      fr.readAsDataURL(blob);
+    objectUrl = URL.createObjectURL(blob);
+
+    const img = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error('decode failed'));
+      i.src = objectUrl;
     });
-  } catch { return null; }
+
+    // An SVG without intrinsic dimensions decodes at the browser's default
+    // size; fall back to a square so it still renders rather than vanishing.
+    const w = img.naturalWidth || maxSize;
+    const h = img.naturalHeight || maxSize;
+    const scale = Math.min(maxSize / w, maxSize / h, 1);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(w * scale));
+    canvas.height = Math.max(1, Math.round(h * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/png');
+  } catch {
+    return null;
+  } finally {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+  }
 }

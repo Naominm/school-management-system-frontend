@@ -78,8 +78,10 @@ export default function BrandingEditor({ school, onSaved, compact }) {
             {current && <Button size="small" color="error" onClick={removeLogo} disabled={busy}>Remove</Button>}
           </Stack>
           <Typography variant="caption" color="text.secondary">
-            PNG, JPEG, WEBP, GIF or SVG, under 512KB. Used on the sidebar, page headers,
-            the merit list, report cards and as the watermark on exported documents.
+            <strong>PNG with a transparent background is recommended</strong> — roughly square,
+            512×512 or larger, under 512KB. JPEG, WEBP, GIF and SVG are also accepted and are
+            converted automatically for PDFs. Used on the sidebar, page headers, the merit list,
+            report cards and as the watermark on exported documents.
             {file ? ` Selected: ${file.name}` : ''}
           </Typography>
           <Stack direction="row" spacing={1.5} alignItems="center">
