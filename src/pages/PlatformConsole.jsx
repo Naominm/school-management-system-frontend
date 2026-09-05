@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Box, Paper, Typography, Grid, Button, Chip, TextField, Alert, LinearProgress,
   Dialog, DialogTitle, DialogContent, DialogActions, Stack, Divider,
@@ -10,6 +10,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import api from '../api';
 import BrandingEditor from '../components/BrandingEditor';
+import { schoolLogoUrl } from '../branding';
 
 const blank = { name: '', code: '', motto: '', crest_colour: '#C9A227' };
 const blankAdmin = { full_name: '', email: '', password: '', position: '' };
@@ -20,6 +21,9 @@ export default function PlatformConsole() {
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
   const [newSchool, setNewSchool] = useState(blank);
+  const [newLogo, setNewLogo] = useState(null);      // data URL preview
+  const [newLogoName, setNewLogoName] = useState('');
+  const newLogoRef = useRef(null);
   const [lockFor, setLockFor] = useState(null);
   const [lockReason, setLockReason] = useState('');
   const [adminFor, setAdminFor] = useState(null);
@@ -39,11 +43,44 @@ export default function PlatformConsole() {
   }
   useEffect(() => { load(); }, []);
 
+  function pickNewLogo(f) {
+    setError('');
+    if (!f) return;
+    if (f.size > 512 * 1024) {
+      setError(`That image is ${Math.round(f.size / 1024)}KB. Please use one under 512KB.`);
+      return;
+    }
+    setNewLogoName(f.name);
+    const fr = new FileReader();
+    fr.onload = () => setNewLogo(String(fr.result));
+    fr.readAsDataURL(f);
+  }
+
+  function clearNewLogo() {
+    setNewLogo(null); setNewLogoName('');
+    if (newLogoRef.current) newLogoRef.current.value = '';
+  }
+
   async function createSchool(e) {
     e.preventDefault();
     try {
-      await api.post('/platform/schools', newSchool);
-      setNewSchool(blank); setOk('School created'); load();
+      const { data } = await api.post('/platform/schools', newSchool);
+      /* The school must exist before its logo can be attached, so this is a
+       * second call rather than part of the create. A failure here leaves the
+       * school in place and says so, instead of losing the whole submission. */
+      if (newLogo) {
+        try {
+          await api.put(`/schools/${data.id}/branding`, { logo: newLogo });
+        } catch (err) {
+          setError(`${data.name} was created, but its logo could not be saved: `
+            + (err.response?.data?.error || 'upload failed') + ' — add it with Logo & colour.');
+          setNewSchool(blank); clearNewLogo(); load();
+          return;
+        }
+      }
+      setNewSchool(blank); clearNewLogo();
+      setOk(newLogo ? 'School created with its logo' : 'School created');
+      load();
     } catch (e) { setError(e.response?.data?.error || 'Could not create school'); }
   }
 
@@ -120,6 +157,24 @@ export default function PlatformConsole() {
             value={newSchool.motto} onChange={(e) => setNewSchool({ ...newSchool, motto: e.target.value })} />
           <TextField size="small" label="Crest colour" sx={{ width: 140 }}
             value={newSchool.crest_colour} onChange={(e) => setNewSchool({ ...newSchool, crest_colour: e.target.value })} />
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Box sx={{ width: 44, height: 44, borderRadius: '10px', flexShrink: 0, overflow: 'hidden',
+                       border: '1px dashed', borderColor: 'divider',
+                       display: 'flex', alignItems: 'center', justifyContent: 'center',
+                       bgcolor: newLogo ? 'background.paper' : (newSchool.crest_colour || 'primary.main') }}>
+              {newLogo
+                ? <Box component="img" src={newLogo} alt=""
+                    sx={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                : <Typography sx={{ color: '#fff', fontSize: 10, fontWeight: 700 }}>LOGO</Typography>}
+            </Box>
+            <Button size="small" component="label">
+              {newLogo ? 'Change' : 'Logo'}
+              <input ref={newLogoRef} hidden type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                onChange={(e) => pickNewLogo(e.target.files?.[0])} />
+            </Button>
+            {newLogo && <Button size="small" color="error" onClick={clearNewLogo}>Clear</Button>}
+          </Stack>
           <Button type="submit" variant="contained" startIcon={<AddIcon />}>Create</Button>
         </Stack>
       </Paper>
@@ -130,12 +185,23 @@ export default function PlatformConsole() {
             <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', gap: 1.5,
                          borderTop: '4px solid', borderTopColor: s.locked ? 'error.main' : (s.crest_colour || 'primary.main') }}>
               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-                <Box sx={{ width: 40, height: 40, borderRadius: '10px', flexShrink: 0,
-                           bgcolor: s.crest_colour || 'primary.main', color: '#fff',
-                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                           fontFamily: 'Fraunces, Georgia, serif', fontWeight: 700 }}>
-                  {s.code}
-                </Box>
+                {s.has_logo ? (
+                  <Box component="img" src={schoolLogoUrl(s.id, s.logo_updated_at)} alt=""
+                    sx={{ width: 40, height: 40, flexShrink: 0, borderRadius: '10px',
+                          objectFit: 'contain', bgcolor: 'background.paper',
+                          border: '1px solid', borderColor: 'divider', p: 0.25 }} />
+                ) : (
+                  <Box sx={{ width: 40, height: 40, borderRadius: '10px', flexShrink: 0,
+                             bgcolor: s.crest_colour || 'primary.main', color: '#fff',
+                             display: 'flex', alignItems: 'center', justifyContent: 'center',
+                             overflow: 'hidden', px: 0.5, textAlign: 'center', lineHeight: 1,
+                             fontFamily: 'Fraunces, Georgia, serif', fontWeight: 700,
+                             /* codes vary in length; shrink so they stay inside the box */
+                             fontSize: String(s.code || '').length > 5 ? 9
+                                     : String(s.code || '').length > 3 ? 11 : 14 }}>
+                    {s.code}
+                  </Box>
+                )}
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography variant="subtitle1" noWrap>{s.name}</Typography>
                   <Typography variant="caption" color="text.secondary"
