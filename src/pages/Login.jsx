@@ -4,6 +4,7 @@ import { Box, Paper, Typography, TextField, Button, Alert, Link, MenuItem, ListI
 import SchoolIcon from '@mui/icons-material/School';
 import { useAuth } from '../auth';
 import api from '../api';
+import { schoolLogoUrl } from '../branding';
 
 export default function Login() {
   const { login } = useAuth();
@@ -87,11 +88,16 @@ export default function Login() {
           >
             {schools.map((s) => (
               <MenuItem key={s.id} value={s.id} disabled={s.locked}>
-                <Box sx={{ width: 22, height: 22, borderRadius: '6px', mr: 1.5, flexShrink: 0,
-                           bgcolor: s.crest_colour || 'primary.main', color: '#fff', fontSize: 10,
-                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
-                  {s.code}
-                </Box>
+                {s.has_logo ? (
+                  <Box component="img" src={schoolLogoUrl(s.id, s.logo_updated_at)} alt=""
+                    sx={{ width: 22, height: 22, mr: 1.5, flexShrink: 0, objectFit: 'contain' }} />
+                ) : (
+                  <Box sx={{ width: 22, height: 22, borderRadius: '6px', mr: 1.5, flexShrink: 0,
+                             bgcolor: s.crest_colour || 'primary.main', color: '#fff', fontSize: 10,
+                             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+                    {s.code}
+                  </Box>
+                )}
                 <ListItemText primary={s.name} sx={{ my: 0 }} />
                 {s.locked && <Chip size="small" label="Locked" color="error" sx={{ ml: 1 }} />}
               </MenuItem>

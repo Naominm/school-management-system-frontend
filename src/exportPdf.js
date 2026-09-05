@@ -6,19 +6,47 @@ const INK = [27, 42, 74];
 const GOLD = [201, 162, 39];
 const PAPER = [241, 236, 223];
 
-function header(doc, title, subtitle) {
+/* Brand mark on the dark header band. */
+function brandMark(doc, brand) {
+  if (!brand?.logo) return 0;
+  try {
+    doc.addImage(brand.logo, 40, 12, 40, 40, undefined, 'FAST');
+    return 52;
+  } catch { return 0; }
+}
+
+/**
+ * A faint centred logo behind the content of every page. Drawn after the
+ * tables so page count is known, and with reduced opacity so it never
+ * competes with the text.
+ */
+function watermark(doc, brand) {
+  if (!brand?.logo) return;
+  const w = doc.internal.pageSize.getWidth();
+  const h = doc.internal.pageSize.getHeight();
+  const size = Math.min(w, h) * 0.55;
+  for (let i = 1; i <= doc.internal.getNumberOfPages(); i += 1) {
+    doc.setPage(i);
+    let gs = null;
+    try { gs = doc.GState({ opacity: 0.06 }); doc.setGState(gs); } catch { /* older jsPDF */ }
+    try { doc.addImage(brand.logo, (w - size) / 2, (h - size) / 2, size, size, undefined, 'FAST'); } catch { /* ignore */ }
+    try { if (gs) doc.setGState(doc.GState({ opacity: 1 })); } catch { /* ignore */ }
+  }
+}
+
+function header(doc, title, subtitle, brand) {
   doc.setFillColor(...INK);
   doc.rect(0, 0, doc.internal.pageSize.getWidth(), 64, 'F');
+  const shift = brandMark(doc, brand);
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
-  doc.text(title, 40, 30);
-  if (subtitle) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.5);
-    doc.setTextColor(200, 208, 224);
-    doc.text(subtitle, 40, 47);
-  }
+  doc.text(title, 40 + shift, 30);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.setTextColor(200, 208, 224);
+  const line = [brand?.schoolName, subtitle].filter(Boolean).join('  ·  ');
+  if (line) doc.text(line, 40 + shift, 47);
   doc.setTextColor(0, 0, 0);
 }
 
@@ -47,9 +75,9 @@ const table = (doc, head, body, startY, opts = {}) => autoTable(doc, {
 });
 
 /** Markbook: learners down, subjects across. Landscape — many columns. */
-export function markbookPdf({ className, term, year, students, areas, scoreOf, filename }) {
+export function markbookPdf({ className, term, year, students, areas, scoreOf, filename, brand }) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-  header(doc, `Markbook — ${className}`, `Term ${term} · ${year} · ${students.length} learners · ${areas.length} subjects`);
+  header(doc, `Markbook — ${className}`, `Term ${term} · ${year} · ${students.length} learners · ${areas.length} subjects`, brand);
   const head = ['Adm. No.', 'Learner', ...areas.map((a) => a.name), 'Avg'];
   const body = students.map((s) => {
     const vals = areas.map((a) => scoreOf(s.id, a.id));
@@ -58,15 +86,16 @@ export function markbookPdf({ className, term, year, students, areas, scoreOf, f
     return [s.admission_number || '—', `${s.last_name} ${s.first_name}`, ...vals.map((v) => (v ?? '') === '' ? '—' : v), avg];
   });
   table(doc, head, body, 80, { columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 110 } } });
+  watermark(doc, brand);
   footer(doc);
   doc.save(`${filename}.pdf`);
 }
 
 /** Merit list: ranked averages. */
-export function meritListPdf({ className, term, year, rows, summary, areas = [], subjectSummary = [], filename }) {
+export function meritListPdf({ className, term, year, rows, summary, areas = [], subjectSummary = [], filename, brand }) {
   const wide = areas.length > 3;
   const doc = new jsPDF({ orientation: wide ? 'landscape' : 'portrait', unit: 'pt', format: 'a4' });
-  header(doc, `Merit list — ${className}`, `Term ${term} · ${year}`);
+  header(doc, `Merit list — ${className}`, `Term ${term} · ${year}`, brand);
   doc.setFontSize(9);
   doc.setTextColor(90, 100, 120);
   const s = summary || {};
@@ -101,17 +130,18 @@ export function meritListPdf({ className, term, year, rows, summary, areas = [],
     footStyles: { fillColor: PAPER, textColor: INK, fontStyle: 'bold', fontSize: 8 },
     columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 58 }, 2: { cellWidth: 104 } },
   });
+  watermark(doc, brand);
   footer(doc);
   doc.save(`${filename}.pdf`);
 }
 
 /** Report cards: one page per learner. */
-export function reportCardsPdf({ className, term, year, students, filename }) {
+export function reportCardsPdf({ className, term, year, students, filename, brand }) {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   students.forEach((st, i) => {
     if (i > 0) doc.addPage();
     header(doc, `${st.last_name} ${st.first_name}`,
-      `${className} · Term ${term} · ${year}${st.admission_number ? ' · Adm. ' + st.admission_number : ''}`);
+      `${className} · Term ${term} · ${year}${st.admission_number ? ' · Adm. ' + st.admission_number : ''}`, brand);
     if (st.marks.length) {
       table(doc,
         ['Learning area', 'Score', '%', 'Grade', 'Remarks'],
@@ -138,6 +168,7 @@ export function reportCardsPdf({ className, term, year, students, filename }) {
       y += 10;
     }
   });
+  watermark(doc, brand);
   footer(doc);
   doc.save(`${filename}.pdf`);
 }

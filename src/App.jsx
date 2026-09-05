@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider, RequireAuth } from './auth';
+import { RequireAuth } from './auth';
 import AppLayout from './layout/AppLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -15,6 +15,7 @@ import Dashboard from './pages/Dashboard';
 import ResourcePage from './pages/ResourcePage';
 import Markbook from './pages/Markbook';
 import PlatformConsole from './pages/PlatformConsole';
+import SchoolBranding from './pages/SchoolBranding';
 import Attendance from './pages/Attendance';
 import MeritList from './pages/MeritList';
 import ReportCard from './pages/ReportCard';
@@ -22,8 +23,7 @@ import Fees from './pages/Fees';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -34,6 +34,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/markbook" element={<Markbook />} />
             <Route path="/platform" element={<PlatformConsole />} />
+            <Route path="/branding" element={<SchoolBranding />} />
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/merit-list" element={<MeritList />} />
             <Route path="/report-cards" element={<ReportCard />} />
@@ -46,7 +47,6 @@ export default function App() {
             <Route path="/r/:key" element={<ResourcePage />} />
           </Route>
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    </BrowserRouter>
   );
 }

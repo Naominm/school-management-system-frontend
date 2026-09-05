@@ -19,7 +19,9 @@ import MailIcon from '@mui/icons-material/Mail';
 import KeyIcon from '@mui/icons-material/Key';
 import TableRowsIcon from '@mui/icons-material/TableRows';
 import ApartmentIcon from '@mui/icons-material/Apartment';
+import PaletteIcon from '@mui/icons-material/Palette';
 import { useAuth } from '../auth';
+import { useBranding } from '../branding';
 import RESOURCES from '../resources';
 
 const drawerWidth = 264;
@@ -46,6 +48,7 @@ const tabSx = {
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
+  const { branding, logoUrl } = useBranding();
   const navigate = useNavigate();
   const isDesktop = useMediaQuery((t) => t.breakpoints.up('md'));
   const [open, setOpen] = useState(false);
@@ -62,6 +65,7 @@ export default function AppLayout() {
     { to: '/parents', label: 'Parents', icon: <FamilyIcon fontSize="small" />, roles: ['admin', 'teacher', 'staff'] },
     { to: '/progress', label: 'My progress', icon: <TimelineIcon fontSize="small" />, roles: ['parent', 'learner'] },
     { to: '/messages', label: 'Messages', icon: <MailIcon fontSize="small" />, roles: ['admin', 'teacher', 'staff', 'parent', 'learner'] },
+    { to: '/branding', label: 'School branding', icon: <PaletteIcon fontSize="small" />, roles: ['admin'] },
     { to: '/change-password', label: 'Change password', icon: <KeyIcon fontSize="small" />, roles: ['admin', 'teacher', 'staff', 'parent', 'learner'] },
   ];
 
@@ -70,10 +74,24 @@ export default function AppLayout() {
   const drawer = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Toolbar sx={{ gap: 1.5 }}>
-        <Avatar sx={{ bgcolor: 'ledger.gold', color: '#231A00', width: 34, height: 34, fontSize: 14, fontFamily: 'Fraunces, Georgia, serif', fontWeight: 700, borderRadius: '9px' }}>SM</Avatar>
-        <Box>
-          <Typography variant="subtitle2" fontWeight={700} sx={{ fontFamily: 'Fraunces, Georgia, serif', color: '#fff' }}>School Manager</Typography>
-          <Typography variant="caption" sx={{ color: '#A9B4CC', letterSpacing: '0.6px' }}>PERN EDITION</Typography>
+        {logoUrl ? (
+          <Box component="img" src={logoUrl} alt={branding?.name || 'School logo'}
+            sx={{ width: 38, height: 38, objectFit: 'contain', borderRadius: '9px',
+                  bgcolor: '#fff', p: 0.4, flexShrink: 0 }} />
+        ) : (
+          <Avatar sx={{ bgcolor: branding?.crest_colour || 'ledger.gold', color: '#fff', width: 34, height: 34,
+                        fontSize: 13, fontFamily: 'Fraunces, Georgia, serif', fontWeight: 700, borderRadius: '9px' }}>
+            {branding?.code || 'SM'}
+          </Avatar>
+        )}
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="subtitle2" fontWeight={700} noWrap
+            sx={{ fontFamily: 'Fraunces, Georgia, serif', color: '#fff' }}>
+            {branding?.name || 'School Manager'}
+          </Typography>
+          <Typography variant="caption" noWrap sx={{ color: '#A9B4CC', letterSpacing: '0.6px' }}>
+            {branding?.motto || (user?.role === 'super_admin' ? 'PLATFORM CONSOLE' : 'SCHOOL RECORDS')}
+          </Typography>
         </Box>
       </Toolbar>
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.10)' }} />
@@ -123,7 +141,7 @@ export default function AppLayout() {
       <AppBar position="fixed" color="inherit" sx={{ borderBottom: (t) => `1px solid ${t.palette.divider}`, boxShadow: 'none', zIndex: (t) => t.zIndex.drawer + 1, display: { md: 'none' } }}>
         <Toolbar>
           <IconButton edge="start" onClick={() => setOpen(true)}><MenuIcon /></IconButton>
-          <Typography variant="h6" sx={{ ml: 1 }}>School Manager</Typography>
+          <Typography variant="h6" noWrap sx={{ ml: 1 }}>{branding?.name || 'School Manager'}</Typography>
         </Toolbar>
       </AppBar>
 

@@ -18,9 +18,12 @@ const sage = '#3E7C59';
 const rust = '#B5493A';
 const amber = '#B98324';
 
-const theme = createTheme({
+/** Build the theme, optionally overriding the accent with a school's colour. */
+export function buildTheme(accent) {
+  const brand = /^#[0-9a-fA-F]{6}$/.test(accent || '') ? accent : gold;
+  return createTheme({
   palette: {
-    primary: { main: gold, dark: '#A8871F', light: gold2, contrastText: '#231A00' },
+    primary: { main: brand, dark: brand, light: brand, contrastText: '#231A00' },
     secondary: { main: ink, dark: '#132039', light: ink2, contrastText: '#FFFFFF' },
     success: { main: sage, light: '#DDEBE2', contrastText: '#FFFFFF' },
     error: { main: rust, light: '#F5DFDA', contrastText: '#FFFFFF' },
@@ -92,7 +95,9 @@ const theme = createTheme({
     MuiLinearProgress: { styleOverrides: { root: { backgroundColor: paperAlt, borderRadius: 999 } } },
     MuiDrawer: { styleOverrides: { paper: { borderRight: 'none' } } },
     MuiTooltip: { styleOverrides: { tooltip: { backgroundColor: ink, fontSize: 12 } } },
-  },
-});
+    },
+  });
+}
 
+const theme = buildTheme();
 export default theme;

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Box, Paper, Typography, TextField, MenuItem, Button, Table, TableHead, TableRow, TableCell, TableBody, Alert, Divider, TableContainer } from '@mui/material';
 import api from '../api';
+import { useBranding, logoDataUrl } from '../branding';
+import SchoolHeader from '../components/SchoolHeader';
 import { exportCsv } from '../exportCsv';
 import { reportCardsPdf } from '../exportPdf';
 import GradeStamp from '../components/GradeStamp';
@@ -41,6 +43,7 @@ export default function ReportCard() {
   const [classId, setClassId] = useState('');
   const [classes, setClasses] = useState([]);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const { branding, logoUrl } = useBranding();
 
   useEffect(() => {
     if (!staff) return;
@@ -60,8 +63,9 @@ export default function ReportCard() {
     try {
       const d = await fetchClassCards();
       if (!d.students.length) { setError('That class has no learners.'); return; }
+      const brand = { logo: await logoDataUrl(logoUrl), schoolName: branding?.name };
       reportCardsPdf({ className: d.class.name, term, year, students: d.students,
-        filename: `report-cards-${d.class.name.replace(/[^\w-]+/g, '_')}-T${term}-${year}` });
+        filename: `report-cards-${d.class.name.replace(/[^\w-]+/g, '_')}-T${term}-${year}`, brand });
     } catch (e) { setError(e.response?.data?.error || 'Could not export report cards'); }
     finally { setBulkBusy(false); }
   }
@@ -100,7 +104,7 @@ export default function ReportCard() {
 
   return (
     <Box>
-      <Typography variant="h5" gutterBottom>Report cards</Typography>
+      <SchoolHeader title="Report cards" />
       <Paper sx={{ p: 2, mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
         {staff && (
           <TextField select size="small" label="Learner" value={studentId} onChange={(e) => setStudentId(e.target.value)} sx={{ minWidth: 220 }}>

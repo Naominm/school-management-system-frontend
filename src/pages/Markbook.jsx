@@ -4,6 +4,7 @@ import {
   TableRow, TableCell, TableBody, LinearProgress, Alert, TableContainer, Tooltip,
 } from '@mui/material';
 import api from '../api';
+import { useBranding, logoDataUrl } from '../branding';
 import { exportCsv } from '../exportCsv';
 import { markbookPdf } from '../exportPdf';
 import { useAuth } from '../auth';
@@ -14,6 +15,7 @@ const ALL_SUBJECTS = '__all__';
 
 export default function Markbook() {
   const { user } = useAuth();
+  const { branding, logoUrl } = useBranding();
   const isManagement = ['admin', 'staff'].includes(user?.role);
 
   const [classes, setClasses] = useState([]);          // [{id, name}]
@@ -153,10 +155,11 @@ export default function Markbook() {
     exportCsv(`markbook-${stamp}`, cols, rows);
   }
 
-  function exportMarkbookPdf() {
+  async function exportMarkbookPdf() {
     if (!grid) return;
+    const brand = { logo: await logoDataUrl(logoUrl), schoolName: branding?.name };
     markbookPdf({ className, term, year, students: grid.students, areas: columns,
-      scoreOf: (sid, laid) => scoreOf(sid, laid), filename: `markbook-${stamp}` });
+      scoreOf: (sid, laid) => scoreOf(sid, laid), filename: `markbook-${stamp}`, brand });
   }
 
   async function downloadTemplate() {

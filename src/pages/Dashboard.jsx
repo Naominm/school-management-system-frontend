@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Grid, Paper, Typography, Box, LinearProgress, Stack } from '@mui/material';
 import api from '../api';
 import { useAuth } from '../auth';
+import SchoolHeader from '../components/SchoolHeader';
 import TeacherDashboard from './TeacherDashboard';
 
 function Stat({ title, value, sub }) {
@@ -27,7 +28,7 @@ export default function Dashboard() {
   if (!staff) {
     return (
       <Box>
-        <Typography variant="h5" gutterBottom>Welcome, {user?.full_name}</Typography>
+        <SchoolHeader title={`Welcome, ${user?.full_name || ''}`} />
         <Typography color="text.secondary">
           Use the menu to view announcements, timetables, assignments and report cards.
         </Typography>

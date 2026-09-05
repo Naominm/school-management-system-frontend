@@ -9,6 +9,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import api from '../api';
+import BrandingEditor from '../components/BrandingEditor';
 
 const blank = { name: '', code: '', motto: '', crest_colour: '#C9A227' };
 const blankAdmin = { full_name: '', email: '', password: '', position: '' };
@@ -24,6 +25,7 @@ export default function PlatformConsole() {
   const [adminFor, setAdminFor] = useState(null);
   const [admin, setAdmin] = useState(blankAdmin);
   const [editFor, setEditFor] = useState(null);
+  const [brandFor, setBrandFor] = useState(null);
   const [editForm, setEditForm] = useState(blank);
   const [deleteFor, setDeleteFor] = useState(null);
   const [impact, setImpact] = useState(null);
@@ -161,6 +163,7 @@ export default function PlatformConsole() {
                   : <Button size="small" color="error" startIcon={<LockIcon />} onClick={() => { setLockFor(s); setLockReason(''); }}>Lock</Button>}
                 <Button size="small" onClick={() => { setAdminFor(s); setAdmin(blankAdmin); }}>Add administrator</Button>
                 <Button size="small" startIcon={<EditIcon />} onClick={() => openEdit(s)}>Edit</Button>
+                <Button size="small" onClick={() => setBrandFor(s)}>Logo &amp; colour</Button>
                 <Button size="small" color="error" startIcon={<DeleteForeverIcon />} onClick={() => openDelete(s)}>Delete</Button>
               </Stack>
             </Paper>
@@ -211,6 +214,18 @@ export default function PlatformConsole() {
           </DialogActions>
         </Box>
       </Dialog>
+      <Dialog open={!!brandFor} onClose={() => setBrandFor(null)} fullWidth maxWidth="sm">
+        <DialogTitle>Branding — {brandFor?.name}</DialogTitle>
+        <DialogContent>
+          {brandFor && (
+            <Box sx={{ pt: 1 }}>
+              <BrandingEditor school={brandFor} onSaved={() => { load(); setBrandFor(null); }} />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions><Button onClick={() => setBrandFor(null)}>Close</Button></DialogActions>
+      </Dialog>
+
       <Dialog open={!!editFor} onClose={() => setEditFor(null)} fullWidth maxWidth="sm">
         <DialogTitle>Edit {editFor?.name}</DialogTitle>
         <Box component="form" onSubmit={saveEdit}>
