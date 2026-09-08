@@ -23,6 +23,8 @@ const { GREEN, GREEN_DARK, MIST, CLOUD, SLATE, INK, RED, AMBER, CYAN } = PALETTE
 const BAND_COLOURS = { EE: GREEN, ME: CYAN, AE: AMBER, BE: RED };
 const bandColour = (grade) => BAND_COLOURS[bandKey(grade)] || null;
 
+const TILE_H = 36;
+
 /** The summary row of tiles that opens both documents. */
 function tiles(doc, items, y) {
   const w = doc.internal.pageSize.getWidth();
@@ -30,11 +32,32 @@ function tiles(doc, items, y) {
   const tw = (w - 60 - gap * (items.length - 1)) / items.length;
   items.forEach(([k, v, colour], i) => {
     const x = 30 + i * (tw + gap);
-    box(doc, x, y, tw, 36, MIST);
+    box(doc, x, y, tw, TILE_H, MIST);
     label(doc, String(k).toUpperCase(), x + tw / 2, y + 14, { size: 7, colour: SLATE, align: 'center' });
     label(doc, v, x + tw / 2, y + 29, { size: 11, colour: colour || GREEN_DARK, align: 'center' });
   });
-  return y + 36;
+  return y + TILE_H;
+}
+
+/**
+ * Give every subject column the same width, and the fixed columns the width
+ * their content needs.
+ *
+ * Left to itself the table sizes each column to its widest header, so
+ * "Agriculture & Nutrition" ends up twice the width of "Kiswahili" and the
+ * grid reads as ragged rather than as a grid. Long headers wrap instead.
+ */
+function gridColumns(doc, subjectCount, fixed, tailWidth) {
+  const usable = doc.internal.pageSize.getWidth() - 60;
+  const fixedTotal = fixed.reduce((a, b) => a + b, 0) + tailWidth;
+  const each = Math.max(30, (usable - fixedTotal) / Math.max(subjectCount, 1));
+  const styles = {};
+  fixed.forEach((wdt, i) => { styles[i] = { cellWidth: wdt }; });
+  for (let i = 0; i < subjectCount; i += 1) {
+    styles[fixed.length + i] = { cellWidth: each, halign: 'center' };
+  }
+  styles[fixed.length + subjectCount] = { cellWidth: tailWidth, halign: 'center', fontStyle: 'bold' };
+  return styles;
 }
 
 /**
@@ -74,7 +97,7 @@ const table = (doc, head, body, startY, { brand, title, ...opts } = {}) => autoT
 export function buildMarkbook({ className, term, year, students, areas, scoreOf, gradeOf, brand }) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
   const title = `Markbook  -  ${className}  -  Term ${term}  -  (${year})`;
-  beginPage(doc, brand, brand?.logo, title);
+  const headerBottom = beginPage(doc, brand, brand?.logo, title);
 
   /* Per-learner averages, and per-subject averages for the footer row. */
   const rows = students.map((s) => {
@@ -105,7 +128,7 @@ export function buildMarkbook({ className, term, year, students, areas, scoreOf,
     ['Learning areas', String(areas.length)],
     ['Marks recorded', `${graded}/${students.length}`],
     ['Class average', classAverage != null ? `${classAverage.toFixed(1)}%` : '—'],
-  ], 94);
+  ], headerBottom + 12);
 
   const head = ['Adm. No.', 'Learner', ...areas.map((a) => a.name), 'Avg'];
   const body = rows.map((r) => [
@@ -125,9 +148,9 @@ export function buildMarkbook({ className, term, year, students, areas, scoreOf,
     foot,
     footStyles: { fillColor: MIST, textColor: GREEN_DARK, fontStyle: 'bold', fontSize: 7.5 },
     columnStyles: {
-      0: { cellWidth: 58 },
-      1: { cellWidth: 108, fontStyle: 'bold' },
-      [head.length - 1]: { cellWidth: 34, fontStyle: 'bold', textColor: GREEN_DARK },
+      ...gridColumns(doc, areas.length, [58, 116], 40),
+      1: { cellWidth: 116, fontStyle: 'bold' },
+      [head.length - 1]: { cellWidth: 40, halign: 'center', fontStyle: 'bold', textColor: GREEN_DARK },
     },
     /* Tint each score by the band it falls in — the sheet is read by
      * scanning for colour, not by reading every number. */
@@ -163,7 +186,7 @@ export function buildMeritList({ className, term, year, rows, summary, areas = [
   const wide = areas.length > 3;
   const doc = new jsPDF({ orientation: wide ? 'landscape' : 'portrait', unit: 'pt', format: 'a4' });
   const title = `Merit list  -  ${className}  -  Term ${term}  -  (${year})`;
-  beginPage(doc, brand, brand?.logo, title);
+  const headerBottom = beginPage(doc, brand, brand?.logo, title);
 
   const s = summary || {};
   const y = tiles(doc, [
@@ -172,7 +195,7 @@ export function buildMeritList({ className, term, year, rows, summary, areas = [
     ['Highest', s.highest != null ? `${s.highest.toFixed(1)}%` : '—'],
     ['Lowest', s.lowest != null ? `${s.lowest.toFixed(1)}%` : '—'],
     ['Pass rate', s.pass_rate != null ? `${s.pass_rate.toFixed(0)}%` : '—'],
-  ], 94);
+  ], headerBottom + 12);
 
   // Score and grade share a cell so the sheet stays readable across many subjects.
   const head = ['#', 'Adm. No.', 'Learner', ...areas.map((a) => a.name), 'Avg %', 'Result'];
@@ -197,10 +220,11 @@ export function buildMeritList({ className, term, year, rows, summary, areas = [
     foot,
     footStyles: { fillColor: MIST, textColor: GREEN_DARK, fontStyle: 'bold', fontSize: 7.5 },
     columnStyles: {
-      0: { cellWidth: 24, fontStyle: 'bold', halign: 'center' },
-      1: { cellWidth: 58 },
-      2: { cellWidth: 104, fontStyle: 'bold' },
-      [head.length - 2]: { fontStyle: 'bold', halign: 'center' },
+      ...gridColumns(doc, areas.length, [26, 58, 110], 78),
+      0: { cellWidth: 26, fontStyle: 'bold', halign: 'center' },
+      2: { cellWidth: 110, fontStyle: 'bold' },
+      [head.length - 2]: { cellWidth: 40, halign: 'center', fontStyle: 'bold' },
+      [head.length - 1]: { cellWidth: 38, halign: 'center' },
     },
     /* The top three carry a medal tint, and the result column the only other
      * colour — so rank and risk both read without scanning every row. */
