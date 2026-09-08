@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PALETTE } from './pdfTheme';
-import { accentOf, box, label, letterhead, titleBand, finish } from './pdfChrome';
+import { box, label, beginPage, finish } from './pdfChrome';
 import { bandKey } from './reportFormat';
 
 /**
@@ -37,9 +37,19 @@ function tiles(doc, items, y) {
   return y + 36;
 }
 
-const table = (doc, head, body, startY, opts = {}) => autoTable(doc, {
+/**
+ * Every page of a table opens the same way as the first: the watermark
+ * underneath, then the letterhead and title band. autoTable makes its own
+ * pages as the rows run on, so this hooks page creation rather than trying to
+ * predict where the breaks fall — otherwise page two of a long markbook comes
+ * out bare.
+ */
+const table = (doc, head, body, startY, { brand, title, ...opts } = {}) => autoTable(doc, {
   head: [head], body, startY,
-  margin: { left: 30, right: 30 },
+  margin: { left: 30, right: 30, top: 118, bottom: 40 },
+  willDrawPage: (data) => {
+    if (data.pageNumber > 1) beginPage(doc, brand, brand?.logo, title);
+  },
   styles: {
     fontSize: 8, cellPadding: 4, overflow: 'linebreak',
     textColor: INK, lineColor: CLOUD, lineWidth: 0.5,
@@ -63,10 +73,8 @@ const table = (doc, head, body, startY, opts = {}) => autoTable(doc, {
  */
 export function buildMarkbook({ className, term, year, students, areas, scoreOf, gradeOf, brand }) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-  const accent = accentOf(brand);
-
-  letterhead(doc, brand, brand?.logo);
-  titleBand(doc, `Markbook  -  ${className}  -  Term ${term}  -  (${year})`, accent);
+  const title = `Markbook  -  ${className}  -  Term ${term}  -  (${year})`;
+  beginPage(doc, brand, brand?.logo, title);
 
   /* Per-learner averages, and per-subject averages for the footer row. */
   const rows = students.map((s) => {
@@ -113,6 +121,7 @@ export function buildMarkbook({ className, term, year, students, areas, scoreOf,
   ]];
 
   table(doc, head, body, y + 14, {
+    brand, title,
     foot,
     footStyles: { fillColor: MIST, textColor: GREEN_DARK, fontStyle: 'bold', fontSize: 7.5 },
     columnStyles: {
@@ -138,7 +147,7 @@ export function buildMarkbook({ className, term, year, students, areas, scoreOf,
     },
   });
 
-  finish(doc, brand, brand?.logo);
+  finish(doc, brand);
   return doc;
 }
 
@@ -153,10 +162,8 @@ export function markbookPdf({ filename, ...opts }) {
 export function buildMeritList({ className, term, year, rows, summary, areas = [], subjectSummary = [], brand }) {
   const wide = areas.length > 3;
   const doc = new jsPDF({ orientation: wide ? 'landscape' : 'portrait', unit: 'pt', format: 'a4' });
-  const accent = accentOf(brand);
-
-  letterhead(doc, brand, brand?.logo);
-  titleBand(doc, `Merit list  -  ${className}  -  Term ${term}  -  (${year})`, accent);
+  const title = `Merit list  -  ${className}  -  Term ${term}  -  (${year})`;
+  beginPage(doc, brand, brand?.logo, title);
 
   const s = summary || {};
   const y = tiles(doc, [
@@ -186,6 +193,7 @@ export function buildMeritList({ className, term, year, rows, summary, areas = [
     : undefined;
 
   table(doc, head, body, y + 14, {
+    brand, title,
     foot,
     footStyles: { fillColor: MIST, textColor: GREEN_DARK, fontStyle: 'bold', fontSize: 7.5 },
     columnStyles: {
@@ -208,7 +216,7 @@ export function buildMeritList({ className, term, year, rows, summary, areas = [
     },
   });
 
-  finish(doc, brand, brand?.logo);
+  finish(doc, brand);
   return doc;
 }
 

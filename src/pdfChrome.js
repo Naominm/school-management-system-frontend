@@ -99,34 +99,46 @@ export function footerBand(doc, brand, accent) {
 }
 
 /**
- * The school crest, faint and centred, behind the content of every page.
+ * The school crest, faint and centred, as the background of the current page.
  *
- * Drawn last so the page count is known, and at low opacity so it marks the
- * document as the school's without competing with anything on top of it.
- * jsPDF versions without GState simply skip the transparency rather than
- * stamping an opaque logo over the text.
+ * Drawn *before* the page's content, so the marks sit on top of it rather
+ * than the crest sitting over the marks — which is what a watermark is. That
+ * means each page stamps its own, rather than a pass over the document at the
+ * end, and every caller has to open a page through `beginPage`.
+ *
+ * A crest with no transparency — a JPEG, typically — arrives as a solid
+ * rectangle, so the opacity has to be low enough that its background does not
+ * read as a grey box and high enough to be visible at all. jsPDF builds
+ * without GState cannot fade an image, and stamping it opaque would bury the
+ * page, so those skip it.
  */
-export function watermark(doc, logo) {
+export function watermark(doc, logo, { opacity = 0.1, scale = 0.62 } = {}) {
   if (!logo) return;
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
-  const size = Math.min(w, h) * 0.55;
-  const pages = doc.internal.getNumberOfPages();
+  const size = Math.min(w, h) * scale;
 
-  for (let i = 1; i <= pages; i += 1) {
-    doc.setPage(i);
-    let faded = null;
-    try {
-      faded = doc.GState({ opacity: 0.06 });
-      doc.setGState(faded);
-    } catch { faded = null; }
-    // Without transparency support, a solid crest would obscure the marks.
-    if (!faded) return;
-    try {
-      doc.addImage(logo, (w - size) / 2, (h - size) / 2, size, size, undefined, 'FAST');
-    } catch { /* the document is fine without it */ }
-    try { doc.setGState(doc.GState({ opacity: 1 })); } catch { /* ignore */ }
-  }
+  let faded = null;
+  try {
+    faded = doc.GState({ opacity });
+    doc.setGState(faded);
+  } catch { return; }
+
+  try {
+    doc.addImage(logo, (w - size) / 2, (h - size) / 2, size, size, undefined, 'FAST');
+  } catch { /* the document is fine without it */ }
+  try { doc.setGState(doc.GState({ opacity: 1 })); } catch { /* ignore */ }
+}
+
+/**
+ * Open a page: the watermark underneath, then the letterhead and title band
+ * on top of it. Every document starts each of its pages here, so no page ends
+ * up without the school's mark.
+ */
+export function beginPage(doc, brand, logo, title) {
+  watermark(doc, logo);
+  letterhead(doc, brand, logo);
+  return titleBand(doc, title, accentOf(brand));
 }
 
 /** Page numbers, drawn across every page once the count is known. */
@@ -140,10 +152,11 @@ export function pageNumbers(doc) {
 }
 
 /**
- * Finish a document: watermark every page, number them, and put the motto
- * band on each. Called once, after all content is laid down.
+ * Finish a document: the spine and motto band on every page, then page
+ * numbers once the count is known. The watermark is not done here — it is
+ * laid down by `beginPage`, underneath the content rather than over it.
  */
-export function finish(doc, brand, logo) {
+export function finish(doc, brand) {
   const accent = accentOf(brand);
   const pages = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pages; i += 1) {
@@ -151,7 +164,6 @@ export function finish(doc, brand, logo) {
     spine(doc, accent);
     footerBand(doc, brand, accent);
   }
-  watermark(doc, logo);
   pageNumbers(doc);
 }
 

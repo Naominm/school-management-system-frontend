@@ -1,6 +1,6 @@
 import { PALETTE, hexToRgb } from './pdfTheme';
 import { subjectCode, rangeLabel } from './reportFormat';
-import { box, label, clip, letterhead, titleBand, finish } from './pdfChrome';
+import { box, label, clip, beginPage, finish } from './pdfChrome';
 
 /**
  * The printed CBC report card.
@@ -379,8 +379,7 @@ export function drawReportCard(doc, { card, student, assets = {} }) {
   const period = ['Academic Report Form', student.class_name, `Term ${card.term}`, `(${card.academic_year})`]
     .filter(Boolean).join('  -  ');
 
-  letterhead(doc, school, assets.logo);
-  titleBand(doc, period, accent);
+  beginPage(doc, school, assets.logo, period);
 
   photoFrame(doc, student, assets.photos?.get(student.id), accent);
   learnerIdentity(doc, student, card.term, card.academic_year);
@@ -398,8 +397,7 @@ export function drawReportCard(doc, { card, student, assets = {} }) {
   const tail = descriptorsHeight(card.grading_scale || []) + 74;
   if (y + tail > FOOTER_TOP) {
     doc.addPage();
-    letterhead(doc, school, assets.logo);
-    titleBand(doc, `${period}  (continued)`, accent);
+    beginPage(doc, school, assets.logo, `${period}  (continued)`);
     y = 130;
   }
 
@@ -416,5 +414,5 @@ export function drawReportCards(doc, card, assets) {
     if (i > 0) doc.addPage();
     drawReportCard(doc, { card, student, assets });
   });
-  finish(doc, { ...(card.school || {}), schoolName: card.school?.name }, assets?.logo);
+  finish(doc, { ...(card.school || {}), schoolName: card.school?.name });
 }
