@@ -2,10 +2,38 @@ import { useEffect, useState } from 'react';
 import {
   Box, Paper, Typography, TextField, Button, Alert, Stack, MenuItem, Chip,
   Table, TableHead, TableRow, TableCell, TableBody, LinearProgress,
+  ToggleButton, ToggleButtonGroup,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import api from '../api';
 import SchoolHeader from '../components/SchoolHeader';
+
+/**
+ * What a message will cost to send, worked out the same way the gateway does.
+ *
+ * GSM-7 fits 160 characters, or 153 each once it splits; a character outside
+ * that alphabet — a curly quote, an em dash, an emoji — drops the whole
+ * message to UCS-2 at 70. A school pays per segment per recipient, so it is
+ * shown before they press send rather than discovered on the bill.
+ */
+const GSM7 = "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?"
+  + '¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà';
+const GSM7_EXT = '^{}\\[~]|€';
+
+function segmentsFor(text) {
+  const body = String(text || '');
+  const gsm = [...body].every((ch) => GSM7.includes(ch) || GSM7_EXT.includes(ch));
+  const units = gsm
+    ? [...body].reduce((n, ch) => n + (GSM7_EXT.includes(ch) ? 2 : 1), 0)
+    : body.length;
+  const single = gsm ? 160 : 70;
+  const multi = gsm ? 153 : 67;
+  return {
+    encoding: gsm ? 'GSM-7' : 'UCS-2',
+    characters: units,
+    segments: units === 0 ? 0 : (units <= single ? 1 : Math.ceil(units / multi)),
+  };
+}
 
 /**
  * Send a notice to parents or staff, and see what became of it.
@@ -25,6 +53,7 @@ const STATUS = {
 export default function Notify() {
   const [audiences, setAudiences] = useState(null);
   const [audience, setAudience] = useState('');
+  const [channel, setChannel] = useState('sms');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
@@ -46,13 +75,16 @@ export default function Notify() {
 
   const options = audiences ? [...audiences.groups, ...audiences.classes] : [];
   const chosen = options.find((o) => o.key === audience);
+  const reach = chosen ? (channel === 'sms' ? chosen.sms : chosen.email) : 0;
+  const size = segmentsFor(body);
+  const configured = channel === 'sms' ? audiences?.sms_configured : audiences?.mailer_configured;
 
   async function send() {
     setBusy(true);
     setError('');
     setResult(null);
     try {
-      const { data } = await api.post('/notifications/send', { audience, subject, body });
+      const { data } = await api.post('/notifications/send', { audience, channel, subject, body });
       setResult(data);
       setSubject('');
       setBody('');
@@ -68,14 +100,24 @@ export default function Notify() {
 
   return (
     <Box>
-      <SchoolHeader title="Notices" subtitle="Email parents and staff" />
+      <SchoolHeader title="Notices" subtitle="Text or email parents and staff" />
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
-      {audiences && !audiences.mailer_configured && (
+      {audiences && !configured && (
         <Alert severity="warning" sx={{ mb: 2 }}>
-          Email is not configured on this server, so notices will be recorded but not delivered.
-          Set <code>SMTP_HOST</code>, <code>SMTP_USER</code> and <code>SMTP_PASS</code> to send them.
+          {channel === 'sms' ? (
+            <>
+              SMS is not configured on this server, so notices will be recorded but not delivered.
+              Set <code>SMS_PROVIDER=africastalking</code>, <code>AT_USERNAME</code>,{' '}
+              <code>AT_API_KEY</code> and <code>AT_SENDER_ID</code> to send them.
+            </>
+          ) : (
+            <>
+              Email is not configured on this server, so notices will be recorded but not delivered.
+              Set <code>SMTP_HOST</code>, <code>SMTP_USER</code> and <code>SMTP_PASS</code> to send them.
+            </>
+          )}
         </Alert>
       )}
 
@@ -83,34 +125,54 @@ export default function Notify() {
         <Alert severity={result.sent ? 'success' : 'warning'} sx={{ mb: 2 }} onClose={() => setResult(null)}>
           {result.recipients} {result.recipients === 1 ? 'recipient' : 'recipients'} ·{' '}
           {result.sent} sent
-          {result.not_sent ? ` · ${result.not_sent} not sent (email not configured)` : ''}
+          {result.not_sent ? ` · ${result.not_sent} not sent (${result.channel === 'sms' ? 'SMS' : 'email'} not configured)` : ''}
           {result.failed ? ` · ${result.failed} failed` : ''}
+          {result.unusable ? ` · ${result.unusable} skipped (no usable ${result.channel === 'sms' ? 'number' : 'address'})` : ''}
+          {result.billed_segments ? ` · ${result.billed_segments} SMS segments billed` : ''}
         </Alert>
       )}
 
       <Paper sx={{ p: 3, mb: 2, maxWidth: 720 }}>
         <Stack spacing={2}>
+          <ToggleButtonGroup exclusive size="small" value={channel}
+            onChange={(_, v) => v && setChannel(v)}>
+            <ToggleButton value="sms">Text message</ToggleButton>
+            <ToggleButton value="email">Email</ToggleButton>
+          </ToggleButtonGroup>
+
           <TextField select label="Send to" value={audience} onChange={(e) => setAudience(e.target.value)}
             helperText={chosen
-              ? `${chosen.count} ${chosen.count === 1 ? 'address' : 'addresses'} on file`
-              : 'Addresses are taken from the roster; a parent with two children receives one notice.'}>
-            {options.map((o) => (
-              <MenuItem key={o.key} value={o.key} disabled={!o.count}>
-                {o.label}
-                <Chip size="small" label={o.count} sx={{ ml: 1.5 }}
-                  color={o.count ? 'default' : 'error'} variant="outlined" />
-              </MenuItem>
-            ))}
+              ? `${reach} ${reach === 1 ? 'recipient' : 'recipients'} with a ${channel === 'sms' ? 'phone number' : 'email address'} on file`
+              : `Taken from the roster; someone with two children here receives one notice.${
+                channel === 'sms' ? ' The parent phone is used, falling back to the emergency contact number.' : ''}`}>
+            {options.map((o) => {
+              const n = channel === 'sms' ? o.sms : o.email;
+              return (
+                <MenuItem key={o.key} value={o.key} disabled={!n}>
+                  {o.label}
+                  <Chip size="small" label={n} sx={{ ml: 1.5 }}
+                    color={n ? 'default' : 'error'} variant="outlined" />
+                </MenuItem>
+              );
+            })}
           </TextField>
 
-          <TextField label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} required />
+          {channel === 'email' && (
+            <TextField label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} required />
+          )}
+
           <TextField label="Message" value={body} onChange={(e) => setBody(e.target.value)}
-            multiline minRows={5} required />
+            multiline minRows={channel === 'sms' ? 4 : 6} required
+            helperText={channel === 'sms'
+              ? `${size.characters} characters · ${size.encoding} · ${size.segments} segment${size.segments === 1 ? '' : 's'} each${
+                reach ? ` · ${size.segments * reach} billed` : ''}${
+                size.encoding === 'UCS-2' ? ' — a curly quote, dash or emoji halves what fits' : ''}`
+              : ' '} />
 
           <Box>
             <Button variant="contained" startIcon={<SendIcon />} onClick={send}
-              disabled={busy || !audience || !subject.trim() || !body.trim() || !chosen?.count}>
-              {busy ? 'Sending…' : `Send${chosen?.count ? ` to ${chosen.count}` : ''}`}
+              disabled={busy || !audience || !body.trim() || !reach || (channel === 'email' && !subject.trim())}>
+              {busy ? 'Sending…' : `Send${reach ? ` to ${reach}` : ''}`}
             </Button>
           </Box>
         </Stack>
@@ -122,6 +184,7 @@ export default function Notify() {
           <TableHead>
             <TableRow>
               <TableCell>When</TableCell>
+              <TableCell>Via</TableCell>
               <TableCell>To</TableCell>
               <TableCell>Subject</TableCell>
               <TableCell>Status</TableCell>
@@ -131,7 +194,11 @@ export default function Notify() {
             {log.map((n) => (
               <TableRow key={n.id}>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}>{String(n.sent_at || '').slice(0, 16).replace('T', ' ')}</TableCell>
-                <TableCell>{n.recipient_email}</TableCell>
+                <TableCell>
+                  <Chip size="small" variant="outlined"
+                    label={n.channel === 'sms' ? 'SMS' : 'Email'} />
+                </TableCell>
+                <TableCell>{n.recipient_phone || n.recipient_email}</TableCell>
                 <TableCell>{n.subject}</TableCell>
                 <TableCell>
                   <Chip size="small" label={STATUS[n.status]?.label || n.status}
@@ -141,7 +208,7 @@ export default function Notify() {
               </TableRow>
             ))}
             {!log.length && (
-              <TableRow><TableCell colSpan={4}>
+              <TableRow><TableCell colSpan={5}>
                 <Typography color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
                   No notices sent yet.
                 </Typography>

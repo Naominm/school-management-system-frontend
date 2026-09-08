@@ -8,7 +8,7 @@ const STAFF = ['admin', 'teacher', 'staff'];
 const ALL = ['admin', 'teacher', 'staff', 'parent', 'learner'];
 
 const RESOURCES = [
-  { key: 'students', label: 'Students', roles: STAFF, columns: ['photo_updated_at', 'admission_number', 'first_name', 'last_name', 'class_id', 'parent_email', 'active'],
+  { key: 'students', label: 'Students', roles: STAFF, columns: ['photo_updated_at', 'admission_number', 'first_name', 'last_name', 'class_id', 'parent_phone', 'active'],
     fields: [
       { name: 'photo', label: 'Passport photo', type: 'image' },
       { name: 'admission_number', label: 'Admission No.' },
@@ -16,6 +16,7 @@ const RESOURCES = [
       { name: 'last_name', label: 'Last name', required: true },
       { name: 'class_id', label: 'Class', type: 'ref', ref: 'classes', refLabel: 'name' },
       { name: 'parent_email', label: 'Parent email' },
+      { name: 'parent_phone', label: 'Parent phone (for SMS)' },
       { name: 'date_of_birth', label: 'Date of birth', type: 'date' },
       { name: 'gender', label: 'Gender', type: 'select', options: ['Male', 'Female'] },
       { name: 'address', label: 'Address' },
