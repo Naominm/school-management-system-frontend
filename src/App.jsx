@@ -20,6 +20,7 @@ import Attendance from './pages/Attendance';
 import MeritList from './pages/MeritList';
 import ReportCard from './pages/ReportCard';
 import Fees from './pages/Fees';
+import Notify from './pages/Notify';
 
 /**
  * The home route, resolved by who is asking. A platform administrator belongs
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="/parents" element={<Parents />} />
             <Route path="/progress" element={<Progress />} />
             <Route path="/messages" element={<Messages />} />
+            <Route path="/notices" element={<Notify />} />
             <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/r/:key" element={<ResourcePage />} />
           </Route>

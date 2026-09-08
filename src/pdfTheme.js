@@ -31,12 +31,14 @@ export const PALETTE = {
   WHITE: [255, 255, 255],
 };
 
-/** The colour a performance band prints in. */
+/**
+ * The colour a performance band prints in — the CBC families and the letter
+ * families alike, so a secondary school's card is as readable as a junior
+ * school's.
+ */
 export const BAND_COLOURS = {
-  EE: PALETTE.GOLD,
-  ME: PALETTE.TEAL,
-  AE: PALETTE.OCHRE,
-  BE: PALETTE.CLAY,
+  EE: PALETTE.GOLD, ME: PALETTE.TEAL, AE: PALETTE.OCHRE, BE: PALETTE.CLAY,
+  A: PALETTE.GOLD, B: PALETTE.TEAL, C: PALETTE.OCHRE, D: PALETTE.OCHRE, E: PALETTE.CLAY,
 };
 
 /** '#2BAADE' → [43, 170, 222]. Null for anything that is not a hex colour. */

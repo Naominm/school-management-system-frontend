@@ -18,7 +18,8 @@ import { subjectCode, bandKey } from '../reportFormat';
  * read as the same document seen at two ranges.
  */
 
-const BAND_HEX = { EE: '#B07D1A', ME: '#0F6E7E', AE: '#C1651A', BE: '#A32E2E' };
+const BAND_HEX = { EE: '#B07D1A', ME: '#0F6E7E', AE: '#C1651A', BE: '#A32E2E',
+              A: '#B07D1A', B: '#0F6E7E', C: '#C1651A', D: '#C1651A', E: '#A32E2E' };
 const bandHex = (grade) => BAND_HEX[bandKey(grade)] || '#818181';
 
 /** Newest first, the way the API returns them. */

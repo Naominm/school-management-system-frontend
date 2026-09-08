@@ -18,8 +18,19 @@ export function subjectCode(name) {
   return out.toUpperCase();
 }
 
-/** 'EE1' → 'EE'. The performance family a grade belongs to. */
-export const bandKey = (grade) => String(grade || '').slice(0, 2).toUpperCase();
+/**
+ * The performance family a grade belongs to: 'EE1' → 'EE', but also 'B+' → 'B'
+ * and 'A-' → 'A'.
+ *
+ * Mirrors the server, so a letter scale is coloured by its letter instead of
+ * falling through to grey — which is what happened when this only knew about
+ * the two-letter CBC codes and a secondary school's card came out colourless.
+ */
+export function bandKey(grade) {
+  const g = String(grade || '').trim().toUpperCase();
+  if (!g) return '';
+  return /^[A-Z]{2}/.test(g) ? g.slice(0, 2) : g[0];
+}
 
 /**
  * A band's percentage range as it is printed: '73-84', not '73-85'.

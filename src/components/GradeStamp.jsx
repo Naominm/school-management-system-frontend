@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import { bandKey } from '../reportFormat';
 
 /**
  * Grade stamp — a rotated, dashed-ring seal, the signature element of the
@@ -20,8 +21,8 @@ const BAND = {
   E:  { fg: 'grade.E', bg: 'grade.EBg' },
 };
 
-/** 'EE1' → EE, 'B' → B. Two letters first, so EE never reads as E. */
-const bandOf = (key) => BAND[key.slice(0, 2)] || BAND[key[0]] || null;
+/** 'EE1' → EE, 'B+' → B. Two letters first, so EE never reads as E. */
+const bandOf = (key) => BAND[bandKey(key)] || BAND[key[0]] || null;
 
 export default function GradeStamp({ grade, size = 38, title }) {
   const key = String(grade || '').trim().toUpperCase();

@@ -16,6 +16,7 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import FamilyIcon from '@mui/icons-material/FamilyRestroom';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import MailIcon from '@mui/icons-material/Mail';
+import CampaignIcon from '@mui/icons-material/Campaign';
 import KeyIcon from '@mui/icons-material/Key';
 import TableRowsIcon from '@mui/icons-material/TableRows';
 import ApartmentIcon from '@mui/icons-material/Apartment';
@@ -65,6 +66,7 @@ export default function AppLayout() {
     { to: '/parents', label: 'Parents', icon: <FamilyIcon fontSize="small" />, roles: ['admin', 'teacher', 'staff'] },
     { to: '/progress', label: 'My progress', icon: <TimelineIcon fontSize="small" />, roles: ['parent', 'learner'] },
     { to: '/messages', label: 'Messages', icon: <MailIcon fontSize="small" />, roles: ['admin', 'teacher', 'staff', 'parent', 'learner'] },
+    { to: '/notices', label: 'Notices', icon: <CampaignIcon fontSize="small" />, roles: ['admin'] },
     { to: '/branding', label: 'School branding', icon: <PaletteIcon fontSize="small" />, roles: ['admin'] },
     { to: '/change-password', label: 'Change password', icon: <KeyIcon fontSize="small" />, roles: ['admin', 'teacher', 'staff', 'parent', 'learner'] },
   ];

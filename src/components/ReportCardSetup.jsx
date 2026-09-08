@@ -17,17 +17,20 @@ import { rangeLabel } from '../reportFormat';
 export default function ReportCardSetup() {
   const [scale, setScale] = useState([]);
   const [areas, setAreas] = useState([]);
+  const [presets, setPresets] = useState([]);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
 
   async function refresh() {
-    const [s, a] = await Promise.all([
+    const [s, a, p] = await Promise.all([
       api.get('/grading-scales').catch(() => ({ data: [] })),
       api.get('/learning-areas').catch(() => ({ data: [] })),
+      api.get('/grading-scales/presets').catch(() => ({ data: [] })),
     ]);
     setScale(s.data);
     setAreas(a.data);
+    setPresets(p.data);
   }
 
   useEffect(() => { refresh(); }, []);
@@ -53,9 +56,10 @@ export default function ReportCardSetup() {
 
       <Typography variant="subtitle2" gutterBottom>Grading scale</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-        The bands printed in the grade descriptors on every report card. CBC bands carry points,
-        which is what the Total Points and Mean Points tiles add up.
-        {!usesPoints && scale.length > 0 && ' Your current scale carries no points, so those tiles are left off the card.'}
+        The bands printed in the grade descriptors on every report card, and what a mark is
+        graded against. Start from a preset or write your own rows — the card renders whatever
+        this school uses.
+        {!usesPoints && scale.length > 0 && ' Your current scale carries no points, so the points tiles are left off the card.'}
       </Typography>
 
       {scale.length > 0 && (
@@ -83,15 +87,24 @@ export default function ReportCardSetup() {
         </Box>
       )}
 
-      <Button variant="outlined" disabled={busy === 'cbc'}
-        onClick={() => run('cbc',
-          () => api.post('/grading-scales/apply-cbc'),
-          (d) => `Applied the ${d.applied} CBC performance bands.`)}>
-        {busy === 'cbc' ? 'Applying…' : 'Apply the CBC performance bands'}
-      </Button>
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
-        Replaces this school&apos;s scale with EE1–BE2 (85–100 down to 0–12), each carrying 8 to 1 points.
-        Marks already recorded are re-graded against the new bands when a card is next drawn.
+      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+        {presets.map((p) => (
+          <Button key={p.key} variant="outlined" disabled={busy === p.key}
+            onClick={() => run(p.key,
+              () => api.post(`/grading-scales/apply/${p.key}`),
+              (d) => `Applied the ${d.applied}-band ${p.label}.`)}>
+            {busy === p.key ? 'Applying…' : `Apply ${p.label}`}
+          </Button>
+        ))}
+      </Stack>
+      {presets.map((p) => (
+        <Typography key={p.key} variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
+          <strong>{p.label}</strong> — {p.grades.join(' · ')}
+        </Typography>
+      ))}
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+        Applying a preset replaces this school&apos;s scale. Marks already recorded are re-graded
+        against the new bands the next time a card is drawn; nothing already entered is lost.
       </Typography>
 
       <Typography variant="subtitle2" sx={{ mt: 3 }} gutterBottom>Learning area groups</Typography>

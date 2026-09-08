@@ -68,7 +68,8 @@ function SubjectChart({ marks, height = 96 }) {
           const h = (pct / 100) * plot;
           return (
             <rect key={m.id ?? i} x={slot * i + (slot - barW) / 2} y={plot - h} width={barW} height={h}
-              fill={{ EE: '#B07D1A', ME: '#0F6E7E', AE: '#C1651A', BE: '#A32E2E' }[bandKey(m.grade)] || '#818181'}>
+              fill={{ EE: '#B07D1A', ME: '#0F6E7E', AE: '#C1651A', BE: '#A32E2E',
+              A: '#B07D1A', B: '#0F6E7E', C: '#C1651A', D: '#C1651A', E: '#A32E2E' }[bandKey(m.grade)] || '#818181'}>
               <title>{`${m.learning_area}: ${pct.toFixed(0)}%`}</title>
             </rect>
           );
