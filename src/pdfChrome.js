@@ -9,10 +9,15 @@ import { PALETTE, hexToRgb } from './pdfTheme';
  * is made once rather than three times.
  */
 
-const { CYAN, GREEN, GREEN_DARK, MIST, SLATE, INK, WHITE } = PALETTE;
+const { PETROL, PETROL_DEEP, GOLD, MIST, SLATE, INK, WHITE } = PALETTE;
 
-/** The school's accent, falling back to the platform cyan. */
-export const accentOf = (brand) => hexToRgb(brand?.crestColour || brand?.crest_colour) || CYAN;
+/**
+ * The accent for title bands and the spine: the school's own crest colour
+ * when it has set one, otherwise the platform petrol. A school keeps its
+ * colour; the gold, the neutrals and the band ramp stay constant so a
+ * document is legible whatever accent it wears.
+ */
+export const accentOf = (brand) => hexToRgb(brand?.crestColour || brand?.crest_colour) || PETROL;
 
 const fill = (doc, c) => doc.setFillColor(c[0], c[1], c[2]);
 const ink = (doc, c) => doc.setTextColor(c[0], c[1], c[2]);
@@ -43,11 +48,11 @@ export function clip(doc, text, width, size, weight = 'normal') {
 
 /* ── Page furniture ────────────────────────────────────────────────────── */
 
-/** The vertical spine down the left edge: green at the crest, accent below. */
+/** The vertical spine down the left edge: gold at the crest, accent below. */
 export function spine(doc, accent) {
   const h = doc.internal.pageSize.getHeight();
   doc.setLineWidth(18);
-  stroke(doc, GREEN);
+  stroke(doc, GOLD);
   doc.line(14, 6, 14, 68);
   stroke(doc, accent);
   doc.line(14, 67, 14, h - 7);
@@ -55,23 +60,34 @@ export function spine(doc, accent) {
 }
 
 /**
- * Crest, school name and the contact block, centred the way a letterhead is.
+ * The letterhead: crest centred at the very top, the school beneath it, then
+ * the contacts on one line.
+ *
+ * Centring the crest leaves both flanks of the page free — which is what lets
+ * the chart sit on one side of the learner block and the photograph on the
+ * other. The contacts run as a single line rather than three so the whole
+ * head still finishes where it always did, and nothing below has to move.
+ *
  * Returns the y the caller may continue from.
  */
 export function letterhead(doc, brand, logo) {
   const w = doc.internal.pageSize.getWidth();
+  const crest = 42;
   if (logo) {
-    try { doc.addImage(logo, 30, 20, 55, 55, undefined, 'FAST'); } catch { /* printed without */ }
+    try { doc.addImage(logo, (w - crest) / 2, 10, crest, crest, undefined, 'FAST'); } catch { /* printed without */ }
   }
-  label(doc, (brand?.schoolName || brand?.name || 'School').toUpperCase(), w / 2, 32,
-    { size: 12, colour: GREEN_DARK, align: 'center' });
+  label(doc, (brand?.schoolName || brand?.name || 'School').toUpperCase(), w / 2, logo ? 66 : 40,
+    { size: 12, colour: PETROL, align: 'center' });
 
-  const lines = [
+  const contacts = [
     brand?.address && `Address: ${brand.address}`,
     brand?.phone && `Tel: ${brand.phone}`,
     brand?.email && `Email: ${brand.email}`,
-  ].filter(Boolean);
-  lines.forEach((line, i) => label(doc, line, w / 2, 50 + i * 16, { size: 9, align: 'center' }));
+  ].filter(Boolean).join('   ·   ');
+  if (contacts) {
+    label(doc, clip(doc, contacts, w - 80, 8.5, 'normal'), w / 2, logo ? 80 : 56,
+      { size: 8.5, weight: 'normal', colour: SLATE, align: 'center' });
+  }
   return 90.5;
 }
 
@@ -88,8 +104,8 @@ export function footerBand(doc, brand, accent) {
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
   const y = h - 24;
-  box(doc, w - 179, y, 18, 19.2, GREEN);
-  box(doc, w - 161, y, 18, 19.2, GREEN);
+  box(doc, w - 179, y, 18, 19.2, GOLD);
+  box(doc, w - 161, y, 18, 19.2, GOLD);
   box(doc, w - 143, y, 133, 19.2, accent);
   const motto = brand?.motto;
   if (motto) {
@@ -167,4 +183,4 @@ export function finish(doc, brand) {
   pageNumbers(doc);
 }
 
-export { MIST, INK, SLATE, GREEN, GREEN_DARK, CYAN, WHITE };
+export { MIST, INK, SLATE, GOLD, PETROL, PETROL_DEEP, WHITE };

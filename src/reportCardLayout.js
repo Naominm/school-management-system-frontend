@@ -1,4 +1,4 @@
-import { PALETTE, hexToRgb } from './pdfTheme';
+import { PALETTE, BAND_COLOURS, hexToRgb } from './pdfTheme';
 import { subjectCode, rangeLabel } from './reportFormat';
 import { box, label, clip, beginPage, finish } from './pdfChrome';
 
@@ -23,7 +23,7 @@ const RIGHT = W - M;             // right edge of the content band
 const CW = RIGHT - M;            // content width
 const FOOTER_TOP = 810;          // nothing may be drawn below this
 
-const { CYAN, GREEN, GREEN_DARK, MIST, CLOUD, SLATE, INK, WHITE, RED, AMBER } = PALETTE;
+const { PETROL, GOLD, TEAL, CLAY, MIST, CLOUD, SLATE, INK } = PALETTE;
 
 /* Column proportions of the learning-areas table, from the reference card. */
 const COLS = [0.2006, 0.0774, 0.056, 0.0774, 0.4315, 0.1568];
@@ -38,11 +38,22 @@ const stroke = (doc, c) => doc.setDrawColor(c[0], c[1], c[2]);
 
 /* ── Learner block ─────────────────────────────────────────────────────── */
 
+/* The learner block runs chart | identity | photograph, left to right. */
+const PHOTO = 90;
+const PHOTO_X = RIGHT - PHOTO;          // the photograph sits on the right
+/* The chart is inset from the margin, not flush with it: its y axis is
+ * labelled to the left of the plot, and at the page margin those labels
+ * would run into the spine. */
+const CHART_X = 44;
+const CHART_W = 236;
+const ID_X = CHART_X + CHART_W + 14;    // the learner between them
+const ID_W = PHOTO_X - ID_X - 12;
+
 /** Passport photo, or the learner's initials when none is on file. */
 function photoFrame(doc, student, photo, accent) {
-  const x = M;
+  const x = PHOTO_X;
   const y = 116.4;
-  const s = 90;
+  const s = PHOTO;
   if (photo) {
     try {
       doc.addImage(photo, x, y, s, s, undefined, 'FAST');
@@ -59,20 +70,29 @@ function photoFrame(doc, student, photo, accent) {
 }
 
 function learnerIdentity(doc, student, term, year) {
-  const x = 127;
-  label(doc, `${student.first_name} ${student.last_name}`.toUpperCase(), x, 132, { size: 11 });
+  const x = ID_X;
+  /* The name wraps rather than clipping — a learner's own name is the one
+   * thing on the card that must not be cut short to fit. */
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  const name = doc.splitTextToSize(`${student.first_name} ${student.last_name}`.toUpperCase(), ID_W).slice(0, 2);
+  name.forEach((line, i) => label(doc, line, x, 130 + i * 13, { size: 11 }));
 
   const rows = [
     ['ADMNO', student.admission_number || '—'],
-    ['GRADE', [student.class_name, `Term ${term} ${year}`].filter(Boolean).join(' · ')],
+    ['GRADE', student.class_name || '—'],
+    ['TERM', `${term}  ${year}`],
   ];
+  if (student.position) rows.push(['POSITION', `${student.position} of ${student.position_of}`]);
+
+  const top = 130 + name.length * 13 + 8;
   rows.forEach(([k, v], i) => {
-    const y = 149 + i * 16;
-    label(doc, `${k}:`, x, y, { size: 8.5, colour: GREEN_DARK });
+    const y = top + i * 14;
+    label(doc, `${k}:`, x, y, { size: 8.5, colour: PETROL });
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
     const w = doc.getTextWidth(`${k}: `);
-    label(doc, v, x + w, y, { size: 8.5, weight: 'normal' });
+    label(doc, clip(doc, v, ID_W - w, 8.5), x + w, y, { size: 8.5, weight: 'normal' });
   });
 }
 
@@ -117,12 +137,12 @@ function subjectChart(doc, marks, scale, x, y, w, h, learnerName) {
   const avg = marks.map((m, i) => (m.class_average == null ? null : {
     x: x + slot * i + slot / 2, y: at(m.class_average),
   }));
-  stroke(doc, INK);
+  stroke(doc, PETROL);
   doc.setLineWidth(0.9);
   for (let i = 1; i < avg.length; i += 1) {
     if (avg[i - 1] && avg[i]) doc.line(avg[i - 1].x, avg[i - 1].y, avg[i].x, avg[i].y);
   }
-  fill(doc, INK);
+  fill(doc, PETROL);
   for (const p of avg) if (p) doc.circle(p.x, p.y, 1.4, 'F');
 
   stroke(doc, SLATE);
@@ -132,14 +152,14 @@ function subjectChart(doc, marks, scale, x, y, w, h, learnerName) {
 
   /* Legend: which series is the learner, which is the class. */
   const hasAvg = avg.some(Boolean);
-  box(doc, x, y + 2, 7, 6, GREEN);
+  box(doc, x, y + 2, 7, 6, GOLD);
   label(doc, clip(doc, learnerName, 90, 5.5, 'bold'), x + 10, y + 7, { size: 5.5, colour: SLATE });
   if (hasAvg) {
     const lx = x + 108;
-    stroke(doc, INK);
+    stroke(doc, PETROL);
     doc.setLineWidth(0.9);
     doc.line(lx, y + 5, lx + 7, y + 5);
-    fill(doc, INK);
+    fill(doc, PETROL);
     doc.circle(lx + 3.5, y + 5, 1.4, 'F');
     label(doc, 'Class average', lx + 10, y + 7, { size: 5.5, colour: SLATE });
     doc.setLineWidth(1);
@@ -158,7 +178,6 @@ function bandTicks(scale) {
   return [25, 50, 75, 100].map((v) => ({ at: v, label: String(v) }));
 }
 
-const BAND_COLOURS = { EE: GREEN, ME: CYAN, AE: AMBER, BE: RED };
 const bandColour = (band) => BAND_COLOURS[band] || SLATE;
 
 /* ── Headline tiles ────────────────────────────────────────────────────── */
@@ -182,7 +201,7 @@ function tiles(doc, student, y) {
     const x = M + i * (w + gap);
     box(doc, x, y, w, 40.2, MIST);
     label(doc, k, x + w / 2, y + 16, { size: 8, colour: SLATE, align: 'center' });
-    label(doc, v, x + w / 2, y + 31, { size: 10, align: 'center' });
+    label(doc, v, x + w / 2, y + 31, { size: 10, align: 'center', colour: PETROL });
   });
   return y + 40.2;
 }
@@ -224,7 +243,7 @@ function marksTable(doc, marks, y) {
     // Movement carries its own colour: green up, red down, grey unchanged.
     const dev = m.dev;
     label(doc, dev == null ? '—' : `${dev > 0 ? '+' : ''}${dev.toFixed(0)}`, xs[2] + widths[2] / 2, ty,
-      { size, weight: 'normal', align: 'center', colour: dev == null || Math.abs(dev) < 0.5 ? SLATE : (dev > 0 ? GREEN : RED) });
+      { size, weight: 'normal', align: 'center', colour: dev == null || Math.abs(dev) < 0.5 ? SLATE : (dev > 0 ? TEAL : CLAY) });
 
     label(doc, m.grade || '—', xs[3] + widths[3] / 2, ty, { size, align: 'center', colour: bandColour(m.band) });
     label(doc, clip(doc, m.remarks, widths[4] - 10, size), xs[4] + 5, ty, { size, weight: 'normal' });
@@ -248,7 +267,7 @@ function strandRow(doc, groups, y) {
     const x = M + i * (w + gap);
     box(doc, x, y, w, 32, MIST);
     label(doc, clip(doc, g.group.toUpperCase(), w - 10, 7.5, 'bold'), x + w / 2, y + 13, { size: 7.5, align: 'center' });
-    label(doc, g.average != null ? g.average.toFixed(1) : '—', x + w / 2, y + 26, { size: 9, align: 'center', colour: GREEN_DARK });
+    label(doc, g.average != null ? g.average.toFixed(1) : '—', x + w / 2, y + 26, { size: 9, align: 'center', colour: PETROL });
   });
   return y + 32;
 }
@@ -310,7 +329,7 @@ function descriptorsHeight(scale) {
 function descriptors(doc, scale, bands, y) {
   if (!scale.length) return y;
 
-  label(doc, 'GRADE DESCRIPTORS', M, y, { size: 8.5, colour: GREEN_DARK });
+  label(doc, 'GRADE DESCRIPTORS', M, y, { size: 8.5, colour: PETROL });
   y += 8;
 
   const labelW = 112;
@@ -375,7 +394,7 @@ function verification(doc, student, qr, y) {
  */
 export function drawReportCard(doc, { card, student, assets = {} }) {
   const school = card.school || {};
-  const accent = hexToRgb(school.crest_colour) || CYAN;
+  const accent = hexToRgb(school.crest_colour) || PETROL;
   const period = ['Academic Report Form', student.class_name, `Term ${card.term}`, `(${card.academic_year})`]
     .filter(Boolean).join('  -  ');
 
@@ -383,7 +402,7 @@ export function drawReportCard(doc, { card, student, assets = {} }) {
 
   photoFrame(doc, student, assets.photos?.get(student.id), accent);
   learnerIdentity(doc, student, card.term, card.academic_year);
-  subjectChart(doc, student.marks, card.grading_scale, 305, 114, RIGHT - 305, 96,
+  subjectChart(doc, student.marks, card.grading_scale, CHART_X, 114, CHART_W, 96,
     `${student.first_name} ${student.last_name}`);
 
   let y = tiles(doc, student, 219.3);

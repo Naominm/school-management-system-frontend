@@ -32,10 +32,21 @@ const onPetrolFaint = '#8FAEB9';   // captions, roles   5.2:1  AA
 
 const mist = '#F5F7FA';
 const cloud = '#E4E5E7';
-const amber = '#C77700';
-const amberSoft = '#FCF0DC';
-const rust = '#C0392B';
-const rustSoft = '#FBE6E3';
+/* The performance ramp, matching the printed bands exactly: gold marks
+ * distinction, teal a sound pass, ochre and clay the two below it. */
+const gold = '#B07D1A';
+const goldSoft = '#F7EEDA';
+const teal = '#0F6E7E';
+const tealSoft = '#E2F0F2';
+const ochre = '#C1651A';
+const ochreSoft = '#FBEADC';
+const clay = '#A32E2E';
+const claySoft = '#F7E4E4';
+
+const amber = ochre;
+const amberSoft = ochreSoft;
+const rust = clay;
+const rustSoft = claySoft;
 
 /**
  * Build the theme, optionally overriding the accent with a school's colour.
@@ -59,21 +70,22 @@ export function buildTheme(accent) {
       report: {
         cyan, cyanDark, cyanSoft, green, greenDark, greenSoft, ink, ink2, slate, mist, cloud,
         petrol, petrolDeep, onPetrol, onPetrolMuted, onPetrolFaint,
+        gold, goldSoft, teal, tealSoft, ochre, ochreSoft, clay, claySoft,
       },
 
       /* The four CBC performance families, and the A–E fallback for schools
        * still on a lettered scale. Keyed by the leading letters of a grade so
        * `grade[bandOf(g)]` resolves for either scheme. */
       grade: {
-        EE: green, EEBg: greenSoft,
-        ME: cyan, MEBg: cyanSoft,
-        AE: amber, AEBg: amberSoft,
-        BE: rust, BEBg: rustSoft,
-        A: green, ABg: greenSoft,
-        B: cyan, BBg: cyanSoft,
-        C: amber, CBg: amberSoft,
-        D: amber, DBg: amberSoft,
-        E: rust, EBg: rustSoft,
+        EE: gold, EEBg: goldSoft,
+        ME: teal, MEBg: tealSoft,
+        AE: ochre, AEBg: ochreSoft,
+        BE: clay, BEBg: claySoft,
+        A: gold, ABg: goldSoft,
+        B: teal, BBg: tealSoft,
+        C: ochre, CBg: ochreSoft,
+        D: ochre, DBg: ochreSoft,
+        E: clay, EBg: claySoft,
       },
     },
 

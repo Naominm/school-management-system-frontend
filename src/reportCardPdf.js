@@ -29,7 +29,12 @@ async function loadAssets({ card, apiBase, logoUrl, origin }) {
     Promise.all(card.students.map(async (s) => {
       try {
         const url = `${origin}/report-cards?code=${s.verification_code}&student=${s.id}`;
-        return [s.id, await QRCode.toDataURL(url, { margin: 0, width: 220, color: { dark: '#28B24Bff', light: '#FFFFFFff' } })];
+        /* Petrol, not the old green: a QR wants a genuinely dark module against
+         * a light one. The green sat at 2.78:1 on white, which is marginal for
+         * a phone camera in a badly lit room; petrol is 12.16:1. */
+        return [s.id, await QRCode.toDataURL(url, {
+          margin: 0, width: 220, color: { dark: '#023B4Aff', light: '#FFFFFFff' },
+        })];
       } catch { return [s.id, null]; }
     })),
   ]);

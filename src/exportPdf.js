@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { PALETTE } from './pdfTheme';
+import { PALETTE, BAND_COLOURS } from './pdfTheme';
 import { box, label, beginPage, finish } from './pdfChrome';
 import { bandKey } from './reportFormat';
 
@@ -17,10 +17,9 @@ import { bandKey } from './reportFormat';
  * bleeding into these two.
  */
 
-const { GREEN, GREEN_DARK, MIST, CLOUD, SLATE, INK, RED, AMBER, CYAN } = PALETTE;
+const { PETROL, TEAL, CLAY, MIST, CLOUD, SLATE, INK } = PALETTE;
 
 /* A grade's colour, so a sheet of numbers still reads at a glance. */
-const BAND_COLOURS = { EE: GREEN, ME: CYAN, AE: AMBER, BE: RED };
 const bandColour = (grade) => BAND_COLOURS[bandKey(grade)] || null;
 
 const TILE_H = 36;
@@ -34,7 +33,7 @@ function tiles(doc, items, y) {
     const x = 30 + i * (tw + gap);
     box(doc, x, y, tw, TILE_H, MIST);
     label(doc, String(k).toUpperCase(), x + tw / 2, y + 14, { size: 7, colour: SLATE, align: 'center' });
-    label(doc, v, x + tw / 2, y + 29, { size: 11, colour: colour || GREEN_DARK, align: 'center' });
+    label(doc, v, x + tw / 2, y + 29, { size: 11, colour: colour || PETROL, align: 'center' });
   });
   return y + TILE_H;
 }
@@ -159,11 +158,11 @@ export function buildMarkbook({ className, term, year, students, areas, scoreOf,
   table(doc, head, body, y + 14, {
     brand, title,
     foot,
-    footStyles: { fillColor: MIST, textColor: GREEN_DARK, fontStyle: 'bold', fontSize: 7.5 },
+    footStyles: { fillColor: MIST, textColor: PETROL, fontStyle: 'bold', fontSize: 7.5 },
     columnStyles: {
       ...gridColumns(doc, areas.length, [58, 116], 40),
       1: { cellWidth: 116, fontStyle: 'bold' },
-      [head.length - 1]: { cellWidth: 40, halign: 'center', fontStyle: 'bold', textColor: GREEN_DARK },
+      [head.length - 1]: { cellWidth: 40, halign: 'center', fontStyle: 'bold', textColor: PETROL },
     },
     /* Tint each score by the band it falls in — the sheet is read by
      * scanning for colour, not by reading every number. */
@@ -232,7 +231,7 @@ export function buildMeritList({ className, term, year, rows, summary, areas = [
   table(doc, head, body, y + 14, {
     brand, title,
     foot,
-    footStyles: { fillColor: MIST, textColor: GREEN_DARK, fontStyle: 'bold', fontSize: 7.5 },
+    footStyles: { fillColor: MIST, textColor: PETROL, fontStyle: 'bold', fontSize: 7.5 },
     columnStyles: {
       ...gridColumns(doc, areas.length, [26, 58, 110], 78),
       0: { cellWidth: 26, fontStyle: 'bold', halign: 'center' },
@@ -245,10 +244,10 @@ export function buildMeritList({ className, term, year, rows, summary, areas = [
     didParseCell: (data) => {
       if (data.section !== 'body') return;
       if (data.column.index === 0 && data.row.index < 3) {
-        data.cell.styles.textColor = GREEN_DARK;
+        data.cell.styles.textColor = PETROL;
       }
       if (data.column.index === head.length - 1) {
-        data.cell.styles.textColor = data.cell.raw === 'Pass' ? GREEN_DARK : RED;
+        data.cell.styles.textColor = data.cell.raw === 'Pass' ? TEAL : CLAY;
         data.cell.styles.fontStyle = 'bold';
       }
     },

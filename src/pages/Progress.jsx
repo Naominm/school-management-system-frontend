@@ -18,7 +18,7 @@ import { subjectCode, bandKey } from '../reportFormat';
  * read as the same document seen at two ranges.
  */
 
-const BAND_HEX = { EE: '#28B24B', ME: '#2BAADE', AE: '#C77700', BE: '#C0392B' };
+const BAND_HEX = { EE: '#B07D1A', ME: '#0F6E7E', AE: '#C1651A', BE: '#A32E2E' };
 const bandHex = (grade) => BAND_HEX[bandKey(grade)] || '#818181';
 
 /** Newest first, the way the API returns them. */
@@ -59,9 +59,9 @@ function TrendLine({ points, height = 110 }) {
           <line key={p} x1={0} x2={w} y1={y(p)} y2={y(p)} stroke="#E4E5E7" strokeWidth={0.4}
             vectorEffect="non-scaling-stroke" />
         ))}
-        <path d={path} fill="none" stroke="#2BAADE" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+        <path d={path} fill="none" stroke="#023B4A" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
         {points.map((p, i) => (
-          <circle key={p.label} cx={i * step} cy={y(p.average)} r={1.6} fill="#28B24B">
+          <circle key={p.label} cx={i * step} cy={y(p.average)} r={1.6} fill="#B07D1A">
             <title>{`${p.label}: ${p.average.toFixed(1)}%`}</title>
           </circle>
         ))}
