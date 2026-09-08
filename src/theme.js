@@ -1,31 +1,25 @@
 import { createTheme } from '@mui/material/styles';
 
-/* ── Report palette ────────────────────────────────────────────────────
- * Taken from the printed CBC report card, so a page on screen and the
- * document it produces are recognisably the same thing.
+/* ── Brand palette ─────────────────────────────────────────────────────
+ * One identity for the product and everything it prints.
  *
- * cyan    primary — title bands, footer rule, active navigation
- * green   achievement — passing bands, positive deltas, the crest rule
- * petrol  the sidebar ground — cyan's hue at a sixth of its lightness
+ * petrol  structure — the sidebar, title bands, the spine, headline figures
+ * teal    interaction — buttons, links, active states, a sound pass
+ * gold    achievement — distinction, the crest rule, the motto blocks
  * ink     text          mist/cloud  table fills and page ground
  *
- * Every page inherits from here — no per-page colour overrides.
+ * Every page inherits from here. There is no per-school override: a school
+ * shows its identity through its crest, not by recolouring the product, so a
+ * document produced by one school is recognisable as the same document a
+ * parent at another school receives.
  */
-const cyan = '#2BAADE';
-const cyanDark = '#1D8CBA';
-const cyanSoft = '#E6F5FB';
-const green = '#28B24B';
-const greenDark = '#34833A';
-const greenSoft = '#E4F6E9';
+const petrol = '#023B4A';
+const petrolDeep = '#012B37';
 const ink = '#131313';
 const ink2 = '#333333';
 const slate = '#818181';
-/* Sidebar ground: the accent's own hue at a sixth of its lightness, so the
- * navigation reads as the dark end of the same colour family as the title
- * bands rather than as neutral black behind cool text. */
-const petrol = '#023B4A';
-const petrolDeep = '#012B37';
-/* Contrast against the lighter end of the gradient, which is the worst case. */
+/* Text on the petrol ground. Contrast measured against the lighter end of
+ * the gradient, which is the worst case. */
 const onPetrol = '#E8F1F4';        // primary text     10.6:1  AAA
 const onPetrolMuted = '#B3C9D1';   // labels and icons  7.1:1  AAA
 const onPetrolFaint = '#8FAEB9';   // captions, roles   5.2:1  AA
@@ -43,32 +37,26 @@ const ochreSoft = '#FBEADC';
 const clay = '#A32E2E';
 const claySoft = '#F7E4E4';
 
-const amber = ochre;
-const amberSoft = ochreSoft;
-const rust = clay;
-const rustSoft = claySoft;
 
-/**
- * Build the theme, optionally overriding the accent with a school's colour.
- * A school that has chosen its own crest colour keeps it; everything else —
- * the achievement green, the neutrals, the type — stays constant so the
- * documents remain legible whatever accent a school picks.
- */
-export function buildTheme(accent) {
-  const brand = /^#[0-9a-fA-F]{6}$/.test(accent || '') ? accent : cyan;
+
+/** Build the theme. One brand, no arguments — see the note above. */
+export function buildTheme() {
   return createTheme({
     palette: {
-      primary: { main: brand, dark: cyanDark, light: cyanSoft, contrastText: '#FFFFFF' },
-      secondary: { main: green, dark: greenDark, light: greenSoft, contrastText: '#FFFFFF' },
-      success: { main: green, light: greenSoft, dark: greenDark, contrastText: '#FFFFFF' },
-      error: { main: rust, light: rustSoft, contrastText: '#FFFFFF' },
-      warning: { main: amber, light: amberSoft, contrastText: '#FFFFFF' },
-      info: { main: cyan, light: cyanSoft, contrastText: '#FFFFFF' },
+      /* teal, not petrol, carries interaction: petrol is the structural dark
+       * and would make every button read as near-black. teal is 5.91:1 on
+       * white, so it works as a link, a label and an icon alike. */
+      primary: { main: teal, dark: petrol, light: tealSoft, contrastText: '#FFFFFF' },
+      secondary: { main: gold, dark: '#8C6215', light: goldSoft, contrastText: '#FFFFFF' },
+      success: { main: teal, light: tealSoft, dark: petrol, contrastText: '#FFFFFF' },
+      error: { main: clay, light: claySoft, contrastText: '#FFFFFF' },
+      warning: { main: ochre, light: ochreSoft, contrastText: '#FFFFFF' },
+      info: { main: petrol, light: tealSoft, contrastText: '#FFFFFF' },
       background: { default: '#FFFFFF', paper: '#FFFFFF' },
       text: { primary: ink, secondary: slate, disabled: '#A8ADB4' },
       divider: cloud,
       report: {
-        cyan, cyanDark, cyanSoft, green, greenDark, greenSoft, ink, ink2, slate, mist, cloud,
+        ink, ink2, slate, mist, cloud,
         petrol, petrolDeep, onPetrol, onPetrolMuted, onPetrolFaint,
         gold, goldSoft, teal, tealSoft, ochre, ochreSoft, clay, claySoft,
       },
@@ -119,7 +107,7 @@ export function buildTheme(accent) {
       MuiButton: {
         styleOverrides: {
           root: { borderRadius: 8, minHeight: 40 },
-          containedPrimary: { color: '#FFFFFF', '&:hover': { backgroundColor: cyanDark } },
+          containedPrimary: { color: '#FFFFFF', '&:hover': { backgroundColor: petrol } },
         },
       },
       MuiTableCell: {

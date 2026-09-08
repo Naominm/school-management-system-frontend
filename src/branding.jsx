@@ -141,6 +141,5 @@ export function usePrintBrand() {
     address: branding?.address,
     phone: branding?.phone,
     email: branding?.email,
-    crestColour: branding?.crest_colour,
   }), [branding, logoUrl]);
 }

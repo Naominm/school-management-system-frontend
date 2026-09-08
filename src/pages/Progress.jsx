@@ -50,7 +50,7 @@ function TrendLine({ points, height = 110 }) {
 
   return (
     <Box>
-      <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: 'report.greenDark', mb: 0.5 }}>
+      <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: 'report.petrol', mb: 0.5 }}>
         AVERAGE BY PERIOD
       </Typography>
       <svg viewBox={`0 0 ${w} 100`} width="100%" height={height} preserveAspectRatio="none" role="img"
@@ -199,7 +199,7 @@ function LearnerProgress({ student, scale }) {
         <Tile label="Average" value={`${period.average.toFixed(1)}%`} accent={bandHex(band?.grade)} />
         {band && <Tile label="Performance level" value={band.grade} accent={bandHex(band.grade)} />}
         <Tile label="Learning areas" value={String(period.marks.length)} />
-        <Tile label="Strongest" value={best ? subjectCode(best.learning_area) : '—'} accent="report.greenDark" />
+        <Tile label="Strongest" value={best ? subjectCode(best.learning_area) : '—'} accent="report.petrol" />
         <Tile label="Needs work" value={weakest ? subjectCode(weakest.learning_area) : '—'} accent="warning.main" />
       </Stack>
 
@@ -213,7 +213,7 @@ function LearnerProgress({ student, scale }) {
       {groups.size > 0 && (
         <Stack direction="row" spacing={1.25} sx={{ mt: 2, flexWrap: 'wrap', gap: 1.25 }}>
           {[...groups].map(([name, g]) => (
-            <Tile key={name} label={name} value={(g.sum / g.n).toFixed(1)} accent="report.greenDark" />
+            <Tile key={name} label={name} value={(g.sum / g.n).toFixed(1)} accent="report.petrol" />
           ))}
         </Stack>
       )}

@@ -15,7 +15,7 @@ export default function SchoolHeader({ title, subtitle, right }) {
                 bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', p: 0.5 }} />
       ) : (
         <Box sx={{ height: 52, width: 52, borderRadius: '10px', flexShrink: 0,
-                   bgcolor: branding?.crest_colour || 'primary.main', color: '#fff',
+                   bgcolor: 'report.petrol', color: '#fff',
                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                    fontWeight: 600 }}>
           {branding?.code || 'SM'}

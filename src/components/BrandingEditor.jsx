@@ -101,9 +101,9 @@ export default function BrandingEditor({ school, onSaved, compact }) {
               ))}
           </Stack>
           <Stack direction="row" spacing={1.5} alignItems="center">
-            <TextField size="small" label="Theme colour" value={colour} sx={{ width: 160 }}
+            <TextField size="small" label="Crest colour" value={colour} sx={{ width: 160 }}
               onChange={(e) => setColour(e.target.value)} placeholder="#2BAADE" />
-            <input type="color" aria-label="Pick theme colour"
+            <input type="color" aria-label="Pick crest colour"
               value={/^#[0-9a-fA-F]{6}$/.test(colour) ? colour : '#2BAADE'}
               onChange={(e) => setColour(e.target.value)}
               style={{ width: 44, height: 38, border: 'none', background: 'none', cursor: 'pointer' }} />

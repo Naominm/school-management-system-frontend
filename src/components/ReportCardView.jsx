@@ -26,7 +26,7 @@ function Crest({ school, logoUrl }) {
         ? <Box component="img" src={logoUrl} alt="" sx={{ width: 56, height: 56, objectFit: 'contain' }} />
         : <Box sx={{ width: 56, height: 56 }} />}
       <Box sx={{ flex: 1, textAlign: 'center' }}>
-        <Typography sx={{ fontWeight: 600, fontSize: 16, color: 'report.greenDark', letterSpacing: '0.02em' }}>
+        <Typography sx={{ fontWeight: 600, fontSize: 16, color: 'report.petrol', letterSpacing: '0.02em' }}>
           {(school?.name || 'School').toUpperCase()}
         </Typography>
         {[school?.address && `Address: ${school.address}`,
@@ -180,7 +180,7 @@ function Descriptors({ scale, bands }) {
 
   return (
     <Box>
-      <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: 'report.greenDark', mb: 0.75 }}>
+      <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: 'report.petrol', mb: 0.75 }}>
         GRADE DESCRIPTORS
       </Typography>
       <Box sx={{ overflowX: 'auto' }}>
@@ -212,7 +212,6 @@ function Descriptors({ scale, bands }) {
 export default function ReportCardView({ card, student, headerRight }) {
   const { logoUrl } = useBranding();
   const school = card?.school;
-  const accent = school?.crest_colour || undefined;
   const period = ['Academic Report Form', student.class_name, `Term ${card.term}`, `(${card.academic_year})`]
     .filter(Boolean).join('  -  ');
 
@@ -221,12 +220,12 @@ export default function ReportCardView({ card, student, headerRight }) {
       {/* The spine, as on the printed page. */}
       <Box sx={{
         position: 'absolute', left: 0, top: 0, bottom: 0, width: 8,
-        background: (t) => `linear-gradient(180deg, ${t.palette.report.green} 0 64px, ${accent || t.palette.primary.main} 64px 100%)`,
+        background: (t) => `linear-gradient(180deg, ${t.palette.report.gold} 0 64px, ${t.palette.report.petrol} 64px 100%)`,
       }} />
       <Box sx={{ pl: 2 }}>
         <Crest school={school} logoUrl={logoUrl} />
 
-        <Box sx={{ bgcolor: accent || 'primary.main', py: 0.75, px: 2 }}>
+        <Box sx={{ bgcolor: 'report.petrol', py: 0.75, px: 2 }}>
           <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: 13, textAlign: 'center', letterSpacing: '0.02em' }}>
             {period.toUpperCase()}
           </Typography>
@@ -240,16 +239,16 @@ export default function ReportCardView({ card, student, headerRight }) {
                 {`${student.first_name} ${student.last_name}`.toUpperCase()}
               </Typography>
               <Typography sx={{ fontSize: 12.5, mt: 0.5 }}>
-                <Box component="span" sx={{ color: 'report.greenDark', fontWeight: 600 }}>ADMNO: </Box>
+                <Box component="span" sx={{ color: 'report.petrol', fontWeight: 600 }}>ADMNO: </Box>
                 {student.admission_number || '—'}
               </Typography>
               <Typography sx={{ fontSize: 12.5 }}>
-                <Box component="span" sx={{ color: 'report.greenDark', fontWeight: 600 }}>GRADE: </Box>
+                <Box component="span" sx={{ color: 'report.petrol', fontWeight: 600 }}>GRADE: </Box>
                 {student.class_name || 'No class'}
               </Typography>
               {student.position && (
                 <Typography sx={{ fontSize: 12.5 }}>
-                  <Box component="span" sx={{ color: 'report.greenDark', fontWeight: 600 }}>POSITION: </Box>
+                  <Box component="span" sx={{ color: 'report.petrol', fontWeight: 600 }}>POSITION: </Box>
                   {student.position} of {student.position_of}
                 </Typography>
               )}
@@ -298,7 +297,7 @@ export default function ReportCardView({ card, student, headerRight }) {
             <Stack direction="row" spacing={1.25} sx={{ mt: 2, flexWrap: 'wrap', gap: 1.25 }}>
               {student.group_averages.map((g) => (
                 <Tile key={g.group} label={g.group}
-                  value={g.average != null ? g.average.toFixed(1) : '—'} accent="report.greenDark" />
+                  value={g.average != null ? g.average.toFixed(1) : '—'} accent="report.petrol" />
               ))}
             </Stack>
           )}

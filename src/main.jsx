@@ -2,15 +2,13 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import App from './App';
-import { buildTheme } from './theme';
+import theme from './theme';
 import { AuthProvider } from './auth';
-import { BrandingProvider, useBranding } from './branding';
+import { BrandingProvider } from './branding';
 
-/* The theme follows the signed-in school's colour, falling back to the Ledger
-   gold when a school has not set one. */
+/* One theme for the whole product — a school's identity is its crest and its
+   name on the page, not a recolouring of the application. */
 function ThemedApp() {
-  const { branding } = useBranding();
-  const theme = React.useMemo(() => buildTheme(branding?.crest_colour), [branding?.crest_colour]);
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />

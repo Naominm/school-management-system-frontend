@@ -1,4 +1,4 @@
-import { PALETTE, BAND_COLOURS, hexToRgb } from './pdfTheme';
+import { PALETTE, BAND_COLOURS } from './pdfTheme';
 import { subjectCode, rangeLabel } from './reportFormat';
 import { box, label, clip, beginPage, finish } from './pdfChrome';
 
@@ -394,7 +394,7 @@ function verification(doc, student, qr, y) {
  */
 export function drawReportCard(doc, { card, student, assets = {} }) {
   const school = card.school || {};
-  const accent = hexToRgb(school.crest_colour) || PETROL;
+  const accent = PETROL;
   const period = ['Academic Report Form', student.class_name, `Term ${card.term}`, `(${card.academic_year})`]
     .filter(Boolean).join('  -  ');
 

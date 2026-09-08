@@ -41,9 +41,7 @@ const tabSx = {
     bgcolor: 'background.default',
     color: 'report.ink',
     boxShadow: '0 4px 10px rgba(0,0,0,0.18)',
-    /* cyanDark, not the accent: #2BAADE on white is 2.66:1, under the 3.0
-     * a non-text element needs to be made out. */
-    '& .MuiListItemIcon-root': { color: 'report.cyanDark' },
+    '& .MuiListItemIcon-root': { color: 'primary.main' },
     '& .MuiListItemText-primary': { fontWeight: 600 },
   },
 };
@@ -81,7 +79,7 @@ export default function AppLayout() {
             sx={{ width: 38, height: 38, objectFit: 'contain', borderRadius: '9px',
                   bgcolor: '#fff', p: 0.4, flexShrink: 0 }} />
         ) : (
-          <Avatar sx={{ bgcolor: branding?.crest_colour || 'primary.main', color: '#fff', width: 34, height: 34,
+          <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.12)', color: 'report.onPetrol', width: 34, height: 34,
                         fontSize: 13, fontWeight: 600, borderRadius: '9px' }}>
             {branding?.code || 'SM'}
           </Avatar>

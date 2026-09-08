@@ -24,8 +24,9 @@ export default function SchoolBranding() {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               The logo appears on the sidebar, at the head of every page and on every printed
               document. The address, telephone and email are printed under the crest on report
-              cards, and the motto runs along the footer band. The theme colour drives buttons
-              and highlights across the system and the title bands on printed documents.
+              cards, and the motto runs along the footer band. The crest colour marks your school
+              where no logo is shown — the system's own colours are the same for every school, so
+              a report card is recognisable whichever school issued it.
             </Typography>
             <BrandingEditor school={{ ...branding, has_logo: branding.has_logo }} onSaved={refresh} />
           </Paper>

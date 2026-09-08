@@ -1,4 +1,4 @@
-import { PALETTE, hexToRgb } from './pdfTheme';
+import { PALETTE } from './pdfTheme';
 
 /**
  * The furniture every printed document shares — the spine, the crest and
@@ -12,12 +12,14 @@ import { PALETTE, hexToRgb } from './pdfTheme';
 const { PETROL, PETROL_DEEP, GOLD, MIST, SLATE, INK, WHITE } = PALETTE;
 
 /**
- * The accent for title bands and the spine: the school's own crest colour
- * when it has set one, otherwise the platform petrol. A school keeps its
- * colour; the gold, the neutrals and the band ramp stay constant so a
- * document is legible whatever accent it wears.
+ * The accent for title bands and the spine — always ours.
+ *
+ * It used to follow whatever colour a school had set, which meant one
+ * school's report card printed its bands in dark red and another's in blue,
+ * and neither looked like the same system had produced them. A school is
+ * identified by its crest and its name on the page.
  */
-export const accentOf = (brand) => hexToRgb(brand?.crestColour || brand?.crest_colour) || PETROL;
+export const accentOf = () => PETROL;
 
 const fill = (doc, c) => doc.setFillColor(c[0], c[1], c[2]);
 const ink = (doc, c) => doc.setTextColor(c[0], c[1], c[2]);
