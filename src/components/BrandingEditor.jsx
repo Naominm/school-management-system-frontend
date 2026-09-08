@@ -4,11 +4,18 @@ import api from '../api';
 import { schoolLogoUrl } from '../branding';
 
 /**
- * Logo and theme colour for one school. Used by the school administrator for
- * their own school and by the platform administrator for any school.
+ * Logo, theme colour and the printed identity of one school — the contact
+ * block under the crest on a report card, and the motto in its footer.
+ *
+ * Used by the school administrator for their own school and by the platform
+ * administrator for any school.
  */
 export default function BrandingEditor({ school, onSaved, compact }) {
-  const [colour, setColour] = useState(school.crest_colour || '#C9A227');
+  const [colour, setColour] = useState(school.crest_colour || '#2BAADE');
+  const [text, setText] = useState({
+    address: school.address || '', phone: school.phone || '',
+    email: school.email || '', motto: school.motto || '',
+  });
   const [preview, setPreview] = useState(null);
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -32,7 +39,7 @@ export default function BrandingEditor({ school, onSaved, compact }) {
   async function save() {
     setBusy(true); setError(''); setOk('');
     try {
-      const body = { crest_colour: colour };
+      const body = { crest_colour: colour, ...text };
       if (preview) body.logo = preview;
       const { data } = await api.put(`/schools/${school.id}/branding`, body);
       setOk('Branding updated'); setFile(null); setPreview(null);
@@ -64,7 +71,7 @@ export default function BrandingEditor({ school, onSaved, compact }) {
                    bgcolor: shown ? 'background.paper' : (colour || 'primary.main') }}>
           {shown
             ? <Box component="img" src={shown} alt="" sx={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-            : <Typography sx={{ color: '#fff', fontFamily: 'Fraunces, Georgia, serif', fontWeight: 700 }}>
+            : <Typography sx={{ color: '#fff', fontWeight: 600 }}>
                 {school.code}
               </Typography>}
         </Box>
@@ -84,11 +91,20 @@ export default function BrandingEditor({ school, onSaved, compact }) {
             report cards and as the watermark on exported documents.
             {file ? ` Selected: ${file.name}` : ''}
           </Typography>
+          {/* Printed on every report card: the contact block under the crest,
+              and the motto along the footer band. */}
+          <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap', gap: 1.5 }}>
+            {[['address', 'Address'], ['phone', 'Telephone'], ['email', 'Email'], ['motto', 'School motto']]
+              .map(([key, label]) => (
+                <TextField key={key} size="small" label={label} value={text[key]} sx={{ flex: 1, minWidth: 180 }}
+                  onChange={(e) => setText((t) => ({ ...t, [key]: e.target.value }))} />
+              ))}
+          </Stack>
           <Stack direction="row" spacing={1.5} alignItems="center">
             <TextField size="small" label="Theme colour" value={colour} sx={{ width: 160 }}
-              onChange={(e) => setColour(e.target.value)} placeholder="#C9A227" />
+              onChange={(e) => setColour(e.target.value)} placeholder="#2BAADE" />
             <input type="color" aria-label="Pick theme colour"
-              value={/^#[0-9a-fA-F]{6}$/.test(colour) ? colour : '#C9A227'}
+              value={/^#[0-9a-fA-F]{6}$/.test(colour) ? colour : '#2BAADE'}
               onChange={(e) => setColour(e.target.value)}
               style={{ width: 44, height: 38, border: 'none', background: 'none', cursor: 'pointer' }} />
             <Button variant="contained" size="small" onClick={save} disabled={busy}>

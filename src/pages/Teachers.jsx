@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Box, Paper, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Chip, Alert, TableContainer, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import LinkIcon from '@mui/icons-material/AddLink';
+import DrawIcon from '@mui/icons-material/Draw';
 import { exportCsv } from '../exportCsv';
 import api from '../api';
 import { useAuth } from '../auth';
+import { SignatureDialog } from '../components/SignatureUpload';
 
 const TYPES = ['subject_teacher', 'class_teacher', 'both', 'general'];
 
@@ -18,6 +20,7 @@ export default function Teachers() {
   const [assigning, setAssigning] = useState(null); // { teacher, kind: 'class'|'subject' }
   const [assignForm, setAssignForm] = useState({ class_id: '', learning_area_id: '', role: 'teacher' });
   const [error, setError] = useState('');
+  const [signing, setSigning] = useState(null);   // the teacher whose signature is open
 
   async function load() {
     const [t, c, a] = await Promise.all([
@@ -86,6 +89,7 @@ export default function Teachers() {
                     <>
                       <Button size="small" startIcon={<LinkIcon />} onClick={() => setAssigning({ teacher: t, kind: 'class' })}>Class</Button>
                       <Button size="small" startIcon={<LinkIcon />} onClick={() => setAssigning({ teacher: t, kind: 'subject' })}>Subject</Button>
+                      <Button size="small" startIcon={<DrawIcon />} onClick={() => setSigning(t)}>Signature</Button>
                     </>
                   )}
                 </TableCell>
@@ -95,6 +99,8 @@ export default function Teachers() {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <SignatureDialog teacher={signing} onClose={() => setSigning(null)} />
 
       <Dialog open={!!creating} onClose={() => setCreating(null)} fullWidth maxWidth="sm">
         <DialogTitle>New teacher</DialogTitle>

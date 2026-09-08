@@ -1,0 +1,441 @@
+import { PALETTE, hexToRgb } from './pdfTheme';
+import { subjectCode, rangeLabel } from './reportFormat';
+
+/**
+ * The printed CBC report card.
+ *
+ * One learner per A4 page, laid out the way a Kenyan competency-based card
+ * reads: crest and contacts, the period band, the learner beside their photo
+ * and a chart of their subjects, the headline tiles, the learning-areas
+ * table, strand averages, both remarks with signatures, the grade
+ * descriptors, and a QR that opens the learner's record.
+ *
+ * Everything past the marks is optional. No photo prints initials, no
+ * signature prints a ruled line, no CBC points drops the points tiles — a
+ * school gets a complete card on day one and a richer one as it fills its
+ * details in.
+ */
+
+const W = 595.28;
+const M = 30;                    // content margin
+const RIGHT = W - M;             // right edge of the content band
+const CW = RIGHT - M;            // content width
+const FOOTER_TOP = 810;          // nothing may be drawn below this
+
+const { CYAN, GREEN, GREEN_DARK, MIST, CLOUD, SLATE, INK, WHITE, RED, AMBER } = PALETTE;
+
+/* Column proportions of the learning-areas table, from the reference card. */
+const COLS = [0.2006, 0.0774, 0.056, 0.0774, 0.4315, 0.1568];
+
+/* ── Small drawing helpers ─────────────────────────────────────────────── */
+
+const fill = (doc, c) => doc.setFillColor(c[0], c[1], c[2]);
+const ink = (doc, c) => doc.setTextColor(c[0], c[1], c[2]);
+const stroke = (doc, c) => doc.setDrawColor(c[0], c[1], c[2]);
+
+function box(doc, x, y, w, h, colour) {
+  fill(doc, colour);
+  doc.rect(x, y, w, h, 'F');
+}
+
+function label(doc, text, x, y, { size = 8, weight = 'bold', colour = INK, align = 'left', style } = {}) {
+  doc.setFont('helvetica', style || weight);
+  doc.setFontSize(size);
+  ink(doc, colour);
+  doc.text(String(text ?? ''), x, y, { align });
+}
+
+/** Truncate to fit a column, so a long subject name never runs into the next. */
+function clip(doc, text, width, size, weight = 'normal') {
+  doc.setFont('helvetica', weight);
+  doc.setFontSize(size);
+  const s = String(text ?? '');
+  if (doc.getTextWidth(s) <= width) return s;
+  let out = s;
+  while (out.length > 1 && doc.getTextWidth(`${out}…`) > width) out = out.slice(0, -1);
+  return `${out}…`;
+}
+
+/* ── Page furniture ────────────────────────────────────────────────────── */
+
+/** The vertical spine down the left edge: green at the crest, cyan below. */
+function spine(doc, accent) {
+  doc.setLineWidth(18);
+  stroke(doc, GREEN);
+  doc.line(14, 6, 14, 68);
+  stroke(doc, accent);
+  doc.line(14, 67, 14, 835);
+  doc.setLineWidth(1);
+}
+
+/** The motto bar and colour blocks along the bottom edge. */
+function footerBand(doc, school, accent) {
+  const y = 817.9;
+  const h = 19.2;
+  box(doc, 416.1, y, 18, h, GREEN);
+  box(doc, 434.1, y, 18, h, GREEN);
+  box(doc, 452.1, y, RIGHT - 452.1 + 21, h, accent);
+  if (school?.motto) {
+    label(doc, `School Motto: ${school.motto}`.toUpperCase(), RIGHT + 15, y + 13,
+      { size: 7.5, colour: WHITE, align: 'right', style: 'bolditalic' });
+  }
+}
+
+/** Crest, school name and the contact block. */
+function crest(doc, school, logo) {
+  if (logo) {
+    try { doc.addImage(logo, M, 20, 55, 55, undefined, 'FAST'); } catch { /* printed without */ }
+  }
+  const mid = W / 2;
+  label(doc, (school?.name || 'School').toUpperCase(), mid, 32, { size: 12, colour: GREEN_DARK, align: 'center' });
+
+  const lines = [
+    school?.address && `Address: ${school.address}`,
+    school?.phone && `Tel: ${school.phone}`,
+    school?.email && `Email: ${school.email}`,
+  ].filter(Boolean);
+  lines.forEach((line, i) => label(doc, line, mid, 50 + i * 16, { size: 9, align: 'center' }));
+}
+
+/** The cyan band naming the period this card covers. */
+function periodBand(doc, title, accent) {
+  box(doc, 23, 90.5, W - 46, 20.4, accent);
+  label(doc, title.toUpperCase(), W / 2, 104.5, { size: 10.5, colour: WHITE, align: 'center' });
+}
+
+/* ── Learner block ─────────────────────────────────────────────────────── */
+
+/** Passport photo, or the learner's initials when none is on file. */
+function photoFrame(doc, student, photo, accent) {
+  const x = M;
+  const y = 116.4;
+  const s = 90;
+  if (photo) {
+    try {
+      doc.addImage(photo, x, y, s, s, undefined, 'FAST');
+      stroke(doc, CLOUD);
+      doc.rect(x, y, s, s);
+      return;
+    } catch { /* fall through to initials */ }
+  }
+  box(doc, x, y, s, s, MIST);
+  stroke(doc, CLOUD);
+  doc.rect(x, y, s, s);
+  const initials = `${student.first_name?.[0] || ''}${student.last_name?.[0] || ''}`.toUpperCase();
+  label(doc, initials || '—', x + s / 2, y + s / 2 + 9, { size: 26, colour: accent, align: 'center' });
+}
+
+function learnerIdentity(doc, student, term, year) {
+  const x = 127;
+  label(doc, `${student.first_name} ${student.last_name}`.toUpperCase(), x, 132, { size: 11 });
+
+  const rows = [
+    ['ADMNO', student.admission_number || '—'],
+    ['GRADE', [student.class_name, `Term ${term} ${year}`].filter(Boolean).join(' · ')],
+  ];
+  rows.forEach(([k, v], i) => {
+    const y = 149 + i * 16;
+    label(doc, `${k}:`, x, y, { size: 8.5, colour: GREEN_DARK });
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    const w = doc.getTextWidth(`${k}: `);
+    label(doc, v, x + w, y, { size: 8.5, weight: 'normal' });
+  });
+}
+
+/**
+ * A column per learning area, scaled 0–100% and coloured by band, with the
+ * band boundaries as gridlines. It says at a glance which subjects carry the
+ * learner and which need work — the thing a table of numbers makes you work
+ * out for yourself.
+ */
+function subjectChart(doc, marks, x, y, w, h) {
+  if (!marks.length) return;
+  const base = y + h - 12;             // baseline, leaving room for the codes
+  const top = y + 8;
+  const plot = base - top;
+
+  stroke(doc, CLOUD);
+  doc.setLineWidth(0.5);
+  for (const pct of [25, 50, 75, 100]) {
+    const gy = base - (pct / 100) * plot;
+    doc.line(x, gy, x + w, gy);
+    label(doc, `${pct}`, x - 4, gy + 2.5, { size: 5.5, weight: 'normal', colour: SLATE, align: 'right' });
+  }
+
+  const slot = w / marks.length;
+  const barW = Math.min(14, slot * 0.62);
+  marks.forEach((m, i) => {
+    const cx = x + slot * i + slot / 2;
+    const pct = Math.max(0, Math.min(100, m.percentage ?? 0));
+    const bh = (pct / 100) * plot;
+    box(doc, cx - barW / 2, base - bh, barW, bh, bandColour(m.band));
+    label(doc, subjectCode(m.learning_area), cx, base + 8, { size: 5.5, colour: SLATE, align: 'center' });
+  });
+
+  stroke(doc, SLATE);
+  doc.setLineWidth(0.7);
+  doc.line(x, base, x + w, base);
+  doc.setLineWidth(1);
+}
+
+const BAND_COLOURS = { EE: GREEN, ME: CYAN, AE: AMBER, BE: RED };
+const bandColour = (band) => BAND_COLOURS[band] || SLATE;
+
+/* ── Headline tiles ────────────────────────────────────────────────────── */
+
+function tiles(doc, student, y) {
+  const items = [
+    ['Performance Level', student.performance_level
+      ? `${student.performance_level.grade} (${student.performance_level.band})` : '—'],
+    ['Total Marks', student.total_marks?.out_of
+      ? `${round(student.total_marks.scored)}/${round(student.total_marks.out_of)}` : '—'],
+    student.total_points
+      ? ['Total Points', `${student.total_points.scored}/${student.total_points.out_of}`]
+      : ['Average', student.average_percentage != null ? `${student.average_percentage.toFixed(1)}%` : '—'],
+    student.mean_points != null
+      ? ['Mean Points', String(student.mean_points)]
+      : ['Position', student.position ? `${student.position} of ${student.position_of}` : '—'],
+  ];
+  const gap = 10;
+  const w = (CW - gap * (items.length - 1)) / items.length;
+  items.forEach(([k, v], i) => {
+    const x = M + i * (w + gap);
+    box(doc, x, y, w, 40.2, MIST);
+    label(doc, k, x + w / 2, y + 16, { size: 8, colour: SLATE, align: 'center' });
+    label(doc, v, x + w / 2, y + 31, { size: 10, align: 'center' });
+  });
+  return y + 40.2;
+}
+
+const round = (n) => (n == null ? '—' : Math.round(n));
+
+/* ── Learning areas table ──────────────────────────────────────────────── */
+
+function marksTable(doc, marks, y) {
+  const heads = ['LEARNING AREAS', 'MARKS', 'DEV.', 'GRADE', 'COMMENT', 'TEACHER'];
+  const widths = COLS.map((f) => f * CW);
+  const xs = widths.reduce((acc, w) => [...acc, acc.at(-1) + w], [M]);
+
+  const headH = 22.6;
+  box(doc, M, y, CW, headH, MIST);
+  heads.forEach((h, i) => {
+    const centred = i > 0 && i < 4;
+    label(doc, h, centred ? xs[i] + widths[i] / 2 : xs[i] + 5, y + 14.5,
+      { size: 7.5, colour: SLATE, align: centred ? 'center' : 'left' });
+  });
+
+  let ry = y + headH;
+  const rowH = marks.length > 12 ? 13 : 16;
+
+  if (!marks.length) {
+    label(doc, 'No marks recorded for this period.', M + 5, ry + 12, { size: 8, weight: 'normal', colour: SLATE });
+    return ry + 24;
+  }
+
+  marks.forEach((m, i) => {
+    if (i % 2 === 1) box(doc, M, ry, CW, rowH, MIST);
+    const ty = ry + rowH / 2 + 2.6;
+    const size = rowH > 14 ? 7.5 : 7;
+
+    label(doc, clip(doc, m.learning_area, widths[0] - 10, size), xs[0] + 5, ty, { size, weight: 'normal' });
+    label(doc, m.percentage != null ? `${m.percentage.toFixed(0)}%` : '—', xs[1] + widths[1] / 2, ty,
+      { size, weight: 'normal', align: 'center' });
+
+    // Movement carries its own colour: green up, red down, grey unchanged.
+    const dev = m.dev;
+    label(doc, dev == null ? '—' : `${dev > 0 ? '+' : ''}${dev.toFixed(0)}`, xs[2] + widths[2] / 2, ty,
+      { size, weight: 'normal', align: 'center', colour: dev == null || Math.abs(dev) < 0.5 ? SLATE : (dev > 0 ? GREEN : RED) });
+
+    label(doc, m.grade || '—', xs[3] + widths[3] / 2, ty, { size, align: 'center', colour: bandColour(m.band) });
+    label(doc, clip(doc, m.remarks, widths[4] - 10, size), xs[4] + 5, ty, { size, weight: 'normal' });
+    label(doc, clip(doc, m.teacher || '—', widths[5] - 10, size), xs[5] + 5, ty, { size, weight: 'normal', colour: SLATE });
+
+    ry += rowH;
+  });
+
+  stroke(doc, CLOUD);
+  doc.rect(M, y, CW, ry - y);
+  return ry;
+}
+
+/* ── Strand averages ───────────────────────────────────────────────────── */
+
+function strandRow(doc, groups, y) {
+  if (!groups.length) return y;
+  const gap = 8;
+  const w = (CW - gap * (groups.length - 1)) / groups.length;
+  groups.forEach((g, i) => {
+    const x = M + i * (w + gap);
+    box(doc, x, y, w, 32, MIST);
+    label(doc, clip(doc, g.group.toUpperCase(), w - 10, 7.5, 'bold'), x + w / 2, y + 13, { size: 7.5, align: 'center' });
+    label(doc, g.average != null ? g.average.toFixed(1) : '—', x + w / 2, y + 26, { size: 9, align: 'center', colour: GREEN_DARK });
+  });
+  return y + 32;
+}
+
+/* ── Remarks and signatures ────────────────────────────────────────────── */
+
+function remarks(doc, student, signatures, y) {
+  const gap = 12;
+  const w = (CW - gap) / 2;
+  const blocks = [
+    ['Class Teacher Remarks', student.class_teacher, student.comments?.class_teacher_comment],
+    ['Principal Remarks', student.headteacher, student.comments?.headteacher_comment],
+  ];
+
+  let deepest = y;
+  blocks.forEach(([title, staff, text], i) => {
+    const x = M + i * (w + gap);
+    box(doc, x, y, w, 20.6, MIST);
+    label(doc, [title, staff?.name].filter(Boolean).join(': '), x + 5, y + 14, { size: 8.5 });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    ink(doc, INK);
+    const body = doc.splitTextToSize(text || 'No remark recorded for this period.', w - 10);
+    const shown = body.slice(0, 5);
+    doc.text(shown, x + 5, y + 34);
+
+    // Signature sits under the remark: the image when one is on file, a ruled
+    // line to sign by hand when not.
+    const sy = y + 34 + shown.length * 10 + 12;
+    label(doc, 'Signature:', x + 5, sy, { size: 8.5, weight: 'normal', colour: SLATE });
+    const sig = staff?.id ? signatures.get(staff.id) : null;
+    if (sig) {
+      try { doc.addImage(sig, x + 55, sy - 14, 70, 20, undefined, 'FAST'); } catch { /* line instead */ }
+    } else {
+      stroke(doc, CLOUD);
+      doc.line(x + 55, sy, x + Math.min(w - 5, 165), sy);
+    }
+    deepest = Math.max(deepest, sy + 8);
+  });
+  return deepest;
+}
+
+/* ── Grade descriptors ─────────────────────────────────────────────────── */
+
+/**
+ * The scale this card was marked against, printed so a parent can read the
+ * card without knowing the school's banding by heart. Built from the
+ * school's own grading_scales, so a school on a lettered scale gets its own
+ * letters rather than CBC bands it does not use.
+ */
+/** Rows the descriptor table will occupy, for the overflow test above. */
+function descriptorsHeight(scale) {
+  if (!scale.length) return 0;
+  const rows = 3 + (scale.some((g) => g.points > 0) ? 1 : 0);   // level, performance, [points], range
+  return 8 + rows * 19;
+}
+
+function descriptors(doc, scale, bands, y) {
+  if (!scale.length) return y;
+
+  label(doc, 'GRADE DESCRIPTORS', M, y, { size: 8.5, colour: GREEN_DARK });
+  y += 8;
+
+  const labelW = 112;
+  const cellW = (CW - labelW) / scale.length;
+  const rowH = 19;
+
+  // Band header spans the grades that belong to it, when the scale is CBC.
+  const families = bands
+    .map((b) => ({ ...b, span: scale.filter((g) => b.grades.includes(g.grade)).length }))
+    .filter((b) => b.span > 0);
+
+  const rows = [
+    ['Level', families.length
+      ? families.map((b) => ({ text: b.label, span: b.span }))
+      : scale.map((g) => ({ text: g.remark || g.grade, span: 1 }))],
+    ['Performance', scale.map((g) => ({ text: g.grade, span: 1 }))],
+    ...(scale.some((g) => g.points > 0) ? [['Points', scale.map((g) => ({ text: String(g.points), span: 1 }))]] : []),
+    ['Range (%)', scale.map((g) => ({ text: rangeLabel(g.min_percentage, g.max_percentage), span: 1 }))],
+  ];
+
+  rows.forEach(([name, cells], r) => {
+    const ry = y + r * rowH;
+    box(doc, M, ry, labelW, rowH, MIST);
+    label(doc, name, M + 5, ry + 13, { size: 8 });
+    let cx = M + labelW;
+    cells.forEach((c) => {
+      const cw = cellW * c.span;
+      stroke(doc, CLOUD);
+      doc.rect(cx, ry, cw, rowH);
+      label(doc, clip(doc, c.text, cw - 4, 7, 'normal'), cx + cw / 2, ry + 13,
+        { size: 7, weight: 'normal', align: 'center' });
+      cx += cw;
+    });
+  });
+  return y + rows.length * rowH;
+}
+
+/* ── Verification ──────────────────────────────────────────────────────── */
+
+function verification(doc, student, qr, y) {
+  if (qr) {
+    try { doc.addImage(qr, M, y, 44, 44, undefined, 'FAST'); } catch { /* code alone */ }
+  }
+  const x = M + 55;
+  label(doc, `Verification Code: ${student.verification_code}`, x, y + 14, { size: 8 });
+  label(doc, 'Scan to open this learner’s record.', x, y + 27,
+    { size: 7.5, weight: 'normal', colour: SLATE });
+  if (student.admission_number) {
+    label(doc, `Admission number: ${student.admission_number}`, x, y + 38,
+      { size: 7.5, weight: 'normal', colour: SLATE });
+  }
+}
+
+/* ── Page assembly ─────────────────────────────────────────────────────── */
+
+/**
+ * Draw one learner's card onto the current page.
+ *
+ * `assets` holds the images already fetched and converted: `logo`, and maps
+ * of `photos`, `signatures` and `qrs` keyed the way `loadAssets` builds them.
+ * Any of them may be missing — each section falls back on its own.
+ */
+export function drawReportCard(doc, { card, student, assets = {} }) {
+  const school = card.school || {};
+  const accent = hexToRgb(school.crest_colour) || CYAN;
+  const period = ['Academic Report Form', student.class_name, `Term ${card.term}`, `(${card.academic_year})`]
+    .filter(Boolean).join('  -  ');
+
+  spine(doc, accent);
+  crest(doc, school, assets.logo);
+  periodBand(doc, period, accent);
+
+  photoFrame(doc, student, assets.photos?.get(student.id), accent);
+  learnerIdentity(doc, student, card.term, card.academic_year);
+  subjectChart(doc, student.marks, 310, 116, RIGHT - 310, 92);
+
+  let y = tiles(doc, student, 219.3);
+  y = marksTable(doc, student.marks, y + 14);
+  y = strandRow(doc, student.group_averages, y + 12);
+  y = remarks(doc, student, assets.signatures || new Map(), y + 14);
+
+  /* A class with many learning areas can run the table past the point where
+   * the descriptors and the QR still fit. Rather than let them collide with
+   * the footer, carry them onto a second page for that learner. */
+  const tail = descriptorsHeight(card.grading_scale || []) + 74;
+  if (y + tail > FOOTER_TOP) {
+    footerBand(doc, school, accent);
+    doc.addPage();
+    spine(doc, accent);
+    crest(doc, school, assets.logo);
+    periodBand(doc, `${period}  (continued)`, accent);
+    y = 130;
+  }
+
+  y = descriptors(doc, card.grading_scale || [], card.bands || [], y + 16);
+  verification(doc, student, assets.qrs?.get(student.id), y + 14);
+
+  footerBand(doc, school, accent);
+}
+
+/** One page per learner, in the order the server returned them. */
+export function drawReportCards(doc, card, assets) {
+  card.students.forEach((student, i) => {
+    if (i > 0) doc.addPage();
+    drawReportCard(doc, { card, student, assets });
+  });
+}

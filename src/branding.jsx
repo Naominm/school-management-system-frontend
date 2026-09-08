@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import api from './api';
 import { useAuth } from './auth';
 
@@ -42,7 +42,8 @@ export function BrandingProvider({ children }) {
 export const useBranding = () => useContext(BrandingContext);
 
 /**
- * Fetch the logo and hand back a PNG data URL for embedding in a PDF.
+ * Fetch an image and hand back a PNG data URL for embedding in a PDF —
+ * a school crest, a learner's photo or a teacher's signature.
  *
  * jsPDF only embeds raster formats reliably, so whatever was uploaded — PNG,
  * JPEG, WEBP, GIF or SVG — is redrawn onto a canvas and exported as PNG. The
@@ -50,14 +51,17 @@ export const useBranding = () => useContext(BrandingContext);
  * canvas is never tainted and toDataURL is allowed even though the image is
  * served from the API host.
  *
- * Returns null on any failure; every caller treats that as "no logo" and the
- * document is produced without one rather than failing.
+ * Returns null on any failure; every caller treats that as "no image" and the
+ * document is produced without it rather than failing.
  */
-export async function logoDataUrl(url, maxSize = 512) {
+export async function imageDataUrl(url, maxSize = 512) {
   if (!url) return null;
   let objectUrl = null;
   try {
-    const res = await fetch(url);
+    // Crests are public, but photos and signatures are not — send the token
+    // when we have one so the same helper serves all three.
+    const token = localStorage.getItem('sms_token');
+    const res = await fetch(url, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
     if (!res.ok) return null;
     const blob = await res.blob();
     objectUrl = URL.createObjectURL(blob);
@@ -86,4 +90,57 @@ export async function logoDataUrl(url, maxSize = 512) {
   } finally {
     if (objectUrl) URL.revokeObjectURL(objectUrl);
   }
+}
+
+/** The school crest, by its older name. */
+export const logoDataUrl = imageDataUrl;
+
+/** Where a learner's photo is served from. */
+export const studentPhotoUrl = (id, version) =>
+  (id ? `${API_BASE}/students/${id}/photo${version ? `?v=${encodeURIComponent(version)}` : ''}` : null);
+
+/** Where a teacher's signature is served from. */
+export const teacherSignatureUrl = (id, version) =>
+  (id ? `${API_BASE}/teachers/${id}/signature${version ? `?v=${encodeURIComponent(version)}` : ''}` : null);
+
+/** The API root, for callers that build their own image URLs. */
+export const apiBase = API_BASE;
+
+/**
+ * An authenticated image, as a data URL usable by `<img src>`.
+ *
+ * Learner photos and signatures need a bearer token, which a plain `<img>`
+ * cannot send, so they are fetched here and handed over as data. Returns null
+ * until it loads, and stays null if there is nothing to show — every caller
+ * renders a fallback for that rather than a broken image.
+ */
+export function useAuthedImage(url) {
+  const [src, setSrc] = useState(null);
+  useEffect(() => {
+    let live = true;
+    setSrc(null);
+    if (url) imageDataUrl(url, 640).then((d) => { if (live) setSrc(d); });
+    return () => { live = false; };
+  }, [url]);
+  return src;
+}
+
+/**
+ * Everything an exported document needs to carry the school's identity:
+ * the crest as embeddable data, the name, contacts, motto and accent.
+ *
+ * Returned as a function rather than a value because the crest has to be
+ * fetched — a page calls it when the user asks for a document, not on render.
+ */
+export function usePrintBrand() {
+  const { branding, logoUrl } = useBranding();
+  return useCallback(async () => ({
+    logo: await imageDataUrl(logoUrl),
+    schoolName: branding?.name,
+    motto: branding?.motto,
+    address: branding?.address,
+    phone: branding?.phone,
+    email: branding?.email,
+    crestColour: branding?.crest_colour,
+  }), [branding, logoUrl]);
 }

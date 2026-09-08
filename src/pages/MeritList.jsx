@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Box, Paper, Typography, TextField, MenuItem, Button, Table, TableHead, TableRow, TableCell, TableBody, Chip, Grid, Alert, TableContainer } from '@mui/material';
 import api from '../api';
-import { useBranding, logoDataUrl } from '../branding';
+import { usePrintBrand } from '../branding';
 import SchoolHeader from '../components/SchoolHeader';
 import GradeStamp from '../components/GradeStamp';
 import { meritListPdf } from '../exportPdf';
@@ -47,7 +47,7 @@ export default function MeritList() {
 
   const fmt = (v) => (v == null ? '—' : `${Number(v).toFixed(1)}%`);
   const areas = data?.learning_areas || [];
-  const { branding, logoUrl } = useBranding();
+  const printBrand = usePrintBrand();
 
   return (
     <Box>
@@ -82,7 +82,7 @@ export default function MeritList() {
         </Button>
         <Button variant="outlined" disabled={!data?.merit_list?.length}
           onClick={async () => meritListPdf({
-            brand: { logo: await logoDataUrl(logoUrl), schoolName: branding?.name },
+            brand: await printBrand(),
             className: classes.find((c) => String(c.id) === String(classId))?.name || 'Class',
             term, year, rows: data.merit_list, summary: data.summary, areas, subjectSummary: data.subject_summary || [],
             filename: `merit-list-term${term}-${year}`,

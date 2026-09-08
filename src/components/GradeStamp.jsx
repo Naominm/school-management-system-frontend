@@ -1,22 +1,31 @@
 import { Box } from '@mui/material';
 
 /**
- * Ledger grade stamp — a rotated, dashed-ring seal, the signature element of
- * the theme. Colour comes from the grade band so A–E read at a glance.
- * Bands follow the server's grading_scales: A/EE 80+, B 65+, C 50+, D 40+, E below.
+ * Grade stamp — a rotated, dashed-ring seal, the signature element of the
+ * theme. Colour comes from the performance family, so a card reads at a
+ * glance: green exceeding, cyan meeting, amber approaching, red below.
+ *
+ * Keyed by the leading letters of a grade, which covers both the CBC bands
+ * (EE1, ME2 …) and the lettered A–E scales some schools still use.
  */
 const BAND = {
-  A:  { fg: 'grade.a', bg: 'grade.aBg' },
-  EE: { fg: 'grade.a', bg: 'grade.aBg' },
-  B:  { fg: 'grade.b', bg: 'grade.bBg' },
-  C:  { fg: 'grade.c', bg: 'grade.cBg' },
-  D:  { fg: 'grade.d', bg: 'grade.dBg' },
-  E:  { fg: 'grade.e', bg: 'grade.eBg' },
+  EE: { fg: 'grade.EE', bg: 'grade.EEBg' },
+  ME: { fg: 'grade.ME', bg: 'grade.MEBg' },
+  AE: { fg: 'grade.AE', bg: 'grade.AEBg' },
+  BE: { fg: 'grade.BE', bg: 'grade.BEBg' },
+  A:  { fg: 'grade.A', bg: 'grade.ABg' },
+  B:  { fg: 'grade.B', bg: 'grade.BBg' },
+  C:  { fg: 'grade.C', bg: 'grade.CBg' },
+  D:  { fg: 'grade.D', bg: 'grade.DBg' },
+  E:  { fg: 'grade.E', bg: 'grade.EBg' },
 };
+
+/** 'EE1' → EE, 'B' → B. Two letters first, so EE never reads as E. */
+const bandOf = (key) => BAND[key.slice(0, 2)] || BAND[key[0]] || null;
 
 export default function GradeStamp({ grade, size = 38, title }) {
   const key = String(grade || '').trim().toUpperCase();
-  const band = BAND[key] || BAND[key[0]] || { fg: 'text.secondary', bg: 'background.default' };
+  const band = bandOf(key) || { fg: 'text.secondary', bg: 'background.default' };
   const empty = !key;
 
   return (
@@ -32,7 +41,7 @@ export default function GradeStamp({ grade, size = 38, title }) {
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         fontFamily: (t) => t.typography.mono.fontFamily,
         fontWeight: 700,
-        fontSize: size * 0.34,
+        fontSize: size * 0.3,
         transform: 'rotate(-7deg)',
         position: 'relative',
         '&::after': {

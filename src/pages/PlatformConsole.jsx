@@ -195,7 +195,7 @@ export default function PlatformConsole() {
                              bgcolor: s.crest_colour || 'primary.main', color: '#fff',
                              display: 'flex', alignItems: 'center', justifyContent: 'center',
                              overflow: 'hidden', px: 0.5, textAlign: 'center', lineHeight: 1,
-                             fontFamily: 'Fraunces, Georgia, serif', fontWeight: 700,
+                             fontWeight: 600,
                              /* codes vary in length; shrink so they stay inside the box */
                              fontSize: String(s.code || '').length > 5 ? 9
                                      : String(s.code || '').length > 3 ? 11 : 14 }}>
@@ -315,7 +315,7 @@ export default function PlatformConsole() {
                 <Box sx={{ width: 44, height: 44, borderRadius: '10px', flexShrink: 0,
                            bgcolor: /^#[0-9a-fA-F]{6}$/.test(editForm.crest_colour) ? editForm.crest_colour : 'primary.main',
                            color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                           fontFamily: 'Fraunces, Georgia, serif', fontWeight: 700 }}>
+                           fontWeight: 600 }}>
                   {editForm.code || '—'}
                 </Box>
               </Stack>

@@ -26,9 +26,9 @@ import RESOURCES from '../resources';
 
 const drawerWidth = 264;
 
-/* Ledger tabs: file-divider shape (rounded top, square bottom), muted on the
- * ink drawer, and lifting to paper when active — the sidebar reads as tabs in
- * a physical ledger. Navigation items and role visibility are unchanged. */
+/* Sidebar tabs: file-divider shape (rounded top, square bottom), muted on the
+ * ink drawer, and lifting to white when active — the same cyan-on-white the
+ * report cards use. Navigation items and role visibility are unchanged. */
 const tabSx = {
   borderRadius: '10px 10px 4px 4px',
   color: '#C7CEE0',
@@ -39,9 +39,9 @@ const tabSx = {
   '&:hover': { bgcolor: 'rgba(255,255,255,0.06)', color: '#fff' },
   '&.active': {
     bgcolor: 'background.default',
-    color: 'ledger.ink',
+    color: 'report.ink',
     boxShadow: '0 4px 10px rgba(0,0,0,0.18)',
-    '& .MuiListItemIcon-root': { color: 'ledger.gold' },
+    '& .MuiListItemIcon-root': { color: 'primary.main' },
     '& .MuiListItemText-primary': { fontWeight: 600 },
   },
 };
@@ -79,14 +79,13 @@ export default function AppLayout() {
             sx={{ width: 38, height: 38, objectFit: 'contain', borderRadius: '9px',
                   bgcolor: '#fff', p: 0.4, flexShrink: 0 }} />
         ) : (
-          <Avatar sx={{ bgcolor: branding?.crest_colour || 'ledger.gold', color: '#fff', width: 34, height: 34,
-                        fontSize: 13, fontFamily: 'Fraunces, Georgia, serif', fontWeight: 700, borderRadius: '9px' }}>
+          <Avatar sx={{ bgcolor: branding?.crest_colour || 'primary.main', color: '#fff', width: 34, height: 34,
+                        fontSize: 13, fontWeight: 600, borderRadius: '9px' }}>
             {branding?.code || 'SM'}
           </Avatar>
         )}
         <Box sx={{ minWidth: 0 }}>
-          <Typography variant="subtitle2" fontWeight={700} noWrap
-            sx={{ fontFamily: 'Fraunces, Georgia, serif', color: '#fff' }}>
+          <Typography variant="subtitle2" fontWeight={600} noWrap sx={{ color: '#fff' }}>
             {branding?.name || 'School Manager'}
           </Typography>
           <Typography variant="caption" noWrap sx={{ color: '#A9B4CC', letterSpacing: '0.6px' }}>
@@ -149,7 +148,7 @@ export default function AppLayout() {
         variant={isDesktop ? 'permanent' : 'temporary'}
         open={isDesktop || open}
         onClose={() => setOpen(false)}
-        sx={{ width: drawerWidth, flexShrink: 0, '& .MuiDrawer-paper': { width: drawerWidth, background: (t) => `linear-gradient(180deg, ${t.palette.ledger.ink} 0%, ${t.palette.ledger.ink2} 100%)`, color: '#EDEFF4' } }}
+        sx={{ width: drawerWidth, flexShrink: 0, '& .MuiDrawer-paper': { width: drawerWidth, background: (t) => `linear-gradient(180deg, ${t.palette.report.ink} 0%, ${t.palette.report.ink2} 100%)`, color: '#EDEFF4' } }}
       >
         {drawer}
       </Drawer>
