@@ -1,5 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { RequireAuth } from './auth';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { RequireAuth, useAuth } from './auth';
 import AppLayout from './layout/AppLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -21,6 +21,17 @@ import MeritList from './pages/MeritList';
 import ReportCard from './pages/ReportCard';
 import Fees from './pages/Fees';
 
+/**
+ * The home route, resolved by who is asking. A platform administrator belongs
+ * to no school, so a school dashboard has nothing to show them — they land in
+ * the console instead.
+ */
+function Home() {
+  const { user } = useAuth();
+  if (user?.role === 'super_admin') return <Navigate to="/platform" replace />;
+  return <Dashboard />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -31,7 +42,7 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Home />} />
             <Route path="/markbook" element={<Markbook />} />
             <Route path="/platform" element={<PlatformConsole />} />
             <Route path="/branding" element={<SchoolBranding />} />
