@@ -4,9 +4,10 @@ import { createTheme } from '@mui/material/styles';
  * Taken from the printed CBC report card, so a page on screen and the
  * document it produces are recognisably the same thing.
  *
- * cyan   primary — title bands, footer rule, active navigation
- * green  achievement — passing bands, positive deltas, the crest rule
- * ink    text          mist/cloud  table fills and page ground
+ * cyan    primary — title bands, footer rule, active navigation
+ * green   achievement — passing bands, positive deltas, the crest rule
+ * petrol  the sidebar ground — cyan's hue at a sixth of its lightness
+ * ink     text          mist/cloud  table fills and page ground
  *
  * Every page inherits from here — no per-page colour overrides.
  */
@@ -19,6 +20,16 @@ const greenSoft = '#E4F6E9';
 const ink = '#131313';
 const ink2 = '#333333';
 const slate = '#818181';
+/* Sidebar ground: the accent's own hue at a sixth of its lightness, so the
+ * navigation reads as the dark end of the same colour family as the title
+ * bands rather than as neutral black behind cool text. */
+const petrol = '#023B4A';
+const petrolDeep = '#012B37';
+/* Contrast against the lighter end of the gradient, which is the worst case. */
+const onPetrol = '#E8F1F4';        // primary text     10.6:1  AAA
+const onPetrolMuted = '#B3C9D1';   // labels and icons  7.1:1  AAA
+const onPetrolFaint = '#8FAEB9';   // captions, roles   5.2:1  AA
+
 const mist = '#F5F7FA';
 const cloud = '#E4E5E7';
 const amber = '#C77700';
@@ -45,7 +56,10 @@ export function buildTheme(accent) {
       background: { default: '#FFFFFF', paper: '#FFFFFF' },
       text: { primary: ink, secondary: slate, disabled: '#A8ADB4' },
       divider: cloud,
-      report: { cyan, cyanDark, cyanSoft, green, greenDark, greenSoft, ink, ink2, slate, mist, cloud },
+      report: {
+        cyan, cyanDark, cyanSoft, green, greenDark, greenSoft, ink, ink2, slate, mist, cloud,
+        petrol, petrolDeep, onPetrol, onPetrolMuted, onPetrolFaint,
+      },
 
       /* The four CBC performance families, and the A–E fallback for schools
        * still on a lettered scale. Keyed by the leading letters of a grade so
@@ -115,7 +129,7 @@ export function buildTheme(accent) {
       MuiAlert: { styleOverrides: { root: { border: `1px solid ${cloud}`, borderRadius: 10 } } },
       MuiOutlinedInput: { styleOverrides: { root: { borderRadius: 8, backgroundColor: '#FFFFFF' } } },
       MuiLinearProgress: { styleOverrides: { root: { backgroundColor: mist, borderRadius: 999 } } },
-      MuiDrawer: { styleOverrides: { paper: { borderRight: `1px solid ${cloud}` } } },
+      MuiDrawer: { styleOverrides: { paper: { borderRight: 'none' } } },
       MuiTooltip: { styleOverrides: { tooltip: { backgroundColor: ink, fontSize: 12 } } },
     },
   });

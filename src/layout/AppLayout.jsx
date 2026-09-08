@@ -27,21 +27,23 @@ import RESOURCES from '../resources';
 const drawerWidth = 264;
 
 /* Sidebar tabs: file-divider shape (rounded top, square bottom), muted on the
- * ink drawer, and lifting to white when active — the same cyan-on-white the
- * report cards use. Navigation items and role visibility are unchanged. */
+ * petrol drawer, and lifting to white when active — the same cyan-on-white
+ * the report cards use. Navigation items and role visibility are unchanged. */
 const tabSx = {
   borderRadius: '10px 10px 4px 4px',
-  color: '#C7CEE0',
+  color: 'report.onPetrolMuted',
   mb: '2px',
   minHeight: 44,
-  '& .MuiListItemIcon-root': { color: '#C7CEE0', minWidth: 34 },
+  '& .MuiListItemIcon-root': { color: 'report.onPetrolMuted', minWidth: 34 },
   '& .MuiListItemText-primary': { fontSize: 13.5, fontWeight: 500 },
-  '&:hover': { bgcolor: 'rgba(255,255,255,0.06)', color: '#fff' },
+  '&:hover': { bgcolor: 'rgba(255,255,255,0.08)', color: 'report.onPetrol' },
   '&.active': {
     bgcolor: 'background.default',
     color: 'report.ink',
     boxShadow: '0 4px 10px rgba(0,0,0,0.18)',
-    '& .MuiListItemIcon-root': { color: 'primary.main' },
+    /* cyanDark, not the accent: #2BAADE on white is 2.66:1, under the 3.0
+     * a non-text element needs to be made out. */
+    '& .MuiListItemIcon-root': { color: 'report.cyanDark' },
     '& .MuiListItemText-primary': { fontWeight: 600 },
   },
 };
@@ -88,7 +90,7 @@ export default function AppLayout() {
           <Typography variant="subtitle2" fontWeight={600} noWrap sx={{ color: '#fff' }}>
             {branding?.name || 'School Manager'}
           </Typography>
-          <Typography variant="caption" noWrap sx={{ color: '#A9B4CC', letterSpacing: '0.6px' }}>
+          <Typography variant="caption" noWrap sx={{ color: 'report.onPetrolFaint', letterSpacing: '0.6px' }}>
             {branding?.motto || (user?.role === 'super_admin' ? 'PLATFORM CONSOLE' : 'SCHOOL RECORDS')}
           </Typography>
         </Box>
@@ -117,17 +119,19 @@ export default function AppLayout() {
           </ListItemButton>
         ))}
       </List>
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.10)' }} />
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Avatar sx={{ width: 32, height: 32, fontSize: 13 }}>
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.12)' }} />
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5,
+                 bgcolor: 'rgba(0,0,0,0.18)' }}>
+        <Avatar sx={{ width: 32, height: 32, fontSize: 13,
+                      bgcolor: 'rgba(255,255,255,0.12)', color: 'report.onPetrol' }}>
           {user?.full_name?.split(' ').map((p) => p[0]).slice(0, 2).join('')}
         </Avatar>
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Typography variant="body2" noWrap fontWeight={600} sx={{ color: '#fff' }}>{user?.full_name}</Typography>
-          <Typography variant="caption" sx={{ textTransform: 'capitalize', color: '#94A0BE' }}>{user?.role}</Typography>
+          <Typography variant="caption" sx={{ textTransform: 'capitalize', color: 'report.onPetrolFaint' }}>{user?.role}</Typography>
         </Box>
         <Tooltip title="Sign out">
-          <IconButton size="small" sx={{ color: '#C7CEE0' }} onClick={() => { logout(); navigate('/login'); }}>
+          <IconButton size="small" sx={{ color: 'report.onPetrolMuted' }} onClick={() => { logout(); navigate('/login'); }}>
             <LogoutIcon fontSize="small" />
           </IconButton>
         </Tooltip>
@@ -148,7 +152,7 @@ export default function AppLayout() {
         variant={isDesktop ? 'permanent' : 'temporary'}
         open={isDesktop || open}
         onClose={() => setOpen(false)}
-        sx={{ width: drawerWidth, flexShrink: 0, '& .MuiDrawer-paper': { width: drawerWidth, background: (t) => `linear-gradient(180deg, ${t.palette.report.ink} 0%, ${t.palette.report.ink2} 100%)`, color: '#EDEFF4' } }}
+        sx={{ width: drawerWidth, flexShrink: 0, '& .MuiDrawer-paper': { width: drawerWidth, border: 'none', background: (t) => `linear-gradient(180deg, ${t.palette.report.petrol} 0%, ${t.palette.report.petrolDeep} 100%)`, color: (t) => t.palette.report.onPetrol } }}
       >
         {drawer}
       </Drawer>
