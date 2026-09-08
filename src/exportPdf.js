@@ -99,7 +99,13 @@ export function buildMarkbook({ className, term, year, students, areas, scoreOf,
   const title = `Markbook  -  ${className}  -  Term ${term}  -  (${year})`;
   const headerBottom = beginPage(doc, brand, brand?.logo, title);
 
-  /* Per-learner averages, and per-subject averages for the footer row. */
+  /* Per-learner averages, and per-subject averages for the footer row.
+   *
+   * The exported sheet is ranked strongest first — it is read, not marked on,
+   * and a ranking answers "who needs attention" on sight. The on-screen grid
+   * stays in register order, which is what marking down a class needs.
+   * Learners with no marks yet sit at the foot rather than reading as the
+   * weakest. */
   const rows = students.map((s) => {
     const vals = areas.map((a) => scoreOf(s.id, a.id));
     const nums = vals.filter((v) => v !== '' && v != null).map(Number).filter((n) => !Number.isNaN(n));
@@ -108,6 +114,13 @@ export function buildMarkbook({ className, term, year, students, areas, scoreOf,
       vals,
       average: nums.length ? nums.reduce((x, y) => x + y, 0) / nums.length : null,
     };
+  }).sort((a, b) => {
+    if (a.average == null && b.average == null) {
+      return `${a.student.last_name} ${a.student.first_name}`.localeCompare(`${b.student.last_name} ${b.student.first_name}`);
+    }
+    if (a.average == null) return 1;
+    if (b.average == null) return -1;
+    return b.average - a.average;
   });
   const columnAverage = areas.map((_, i) => {
     const nums = rows
@@ -159,7 +172,8 @@ export function buildMarkbook({ className, term, year, students, areas, scoreOf,
       const last = head.length - 2;
       if (data.section !== 'body' || data.column.index < first || data.column.index > last) return;
       const area = areas[data.column.index - first];
-      const learner = students[data.row.index];
+      // Look the learner up in the sorted rows, not the caller's order.
+      const learner = rows[data.row.index]?.student;
       const grade = gradeOf?.(learner?.id, area?.id);
       const colour = grade ? bandColour(grade) : null;
       if (colour) {

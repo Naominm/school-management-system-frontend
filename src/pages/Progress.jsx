@@ -127,9 +127,14 @@ function LearnerProgress({ student, scale }) {
       if (!byPeriod.has(k)) byPeriod.set(k, []);
       byPeriod.get(k).push(m);
     }
+    /* Strongest subject first, matching the report card, so the two read the
+     * same way round. Ties fall back to the subject name so the order does
+     * not shuffle between terms. */
+    const ranked = (list) => [...list].sort((a, b) =>
+      (b.percentage ?? -1) - (a.percentage ?? -1) || a.learning_area.localeCompare(b.learning_area));
     return [...byPeriod].map(([label, marks]) => ({
       label,
-      marks,
+      marks: ranked(marks),
       average: marks.reduce((t, m) => t + m.percentage, 0) / marks.length,
     }));
   }, [student.marks]);
