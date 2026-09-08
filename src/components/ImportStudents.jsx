@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Alert, Table, TableHead, TableRow, TableCell, TableBody, Box, Chip } from '@mui/material';
 import UploadIcon from '@mui/icons-material/UploadFile';
 import DownloadIcon from '@mui/icons-material/Download';
+import PhotoIcon from '@mui/icons-material/AddAPhoto';
 import { exportCsv } from '../exportCsv';
 import api from '../api';
 
@@ -24,11 +25,59 @@ const TEMPLATE_EXAMPLE = [{
   emergency_contact: 'Jane Kamau', emergency_phone: '0712345678',
 }];
 
+/** '651.jpg' → '651'. The photographer names files after the admission number. */
+const admissionFromFilename = (name) => String(name).replace(/\.[^.]+$/, '').trim();
+
+const readAsDataUrl = (file) => new Promise((resolve, reject) => {
+  const r = new FileReader();
+  r.onload = () => resolve(String(r.result));
+  r.onerror = () => reject(new Error(`${file.name} could not be read`));
+  r.readAsDataURL(file);
+});
+
 export default function ImportStudents({ onImported }) {
   const fileRef = useRef(null);
+  const photoRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
+  const [photoResult, setPhotoResult] = useState(null);
   const [error, setError] = useState('');
+
+  /**
+   * Attach a folder of photographs in one go, matched to learners by the
+   * admission number in each file name — which is how a school photographer
+   * hands them over. Files are read here and sent as one request.
+   */
+  async function handlePhotos(e) {
+    const files = [...(e.target.files || [])];
+    e.target.value = '';
+    if (!files.length) return;
+    if (files.length > 200) {
+      setError(`That is ${files.length} photos. Please import at most 200 at a time.`);
+      return;
+    }
+    setBusy(true); setError('');
+    try {
+      const photos = [];
+      const unreadable = [];
+      for (const file of files) {
+        try {
+          photos.push({
+            admission_number: admissionFromFilename(file.name),
+            name: file.name,
+            photo: await readAsDataUrl(file),
+          });
+        } catch { unreadable.push(file.name); }
+      }
+      const { data } = await api.post('/students/photos/import', { photos });
+      setPhotoResult({ ...data, errors: [...(data.errors || []), ...unreadable.map((n) => ({ name: n, reason: 'unreadable file' }))] });
+      onImported?.();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Photo import failed');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function handleFile(e) {
     const file = e.target.files?.[0];
@@ -61,7 +110,45 @@ export default function ImportStudents({ onImported }) {
         onClick={() => fileRef.current?.click()}>
         {busy ? 'Importing…' : 'Import CSV'}
       </Button>
+      <Button variant="outlined" startIcon={<PhotoIcon />} disabled={busy}
+        onClick={() => photoRef.current?.click()}>
+        Import photos
+      </Button>
       <input ref={fileRef} type="file" accept=".csv,text/csv" hidden onChange={handleFile} />
+      <input ref={photoRef} type="file" accept="image/*" multiple hidden onChange={handlePhotos} />
+
+      <Dialog open={!!photoResult} onClose={() => setPhotoResult(null)} fullWidth maxWidth="sm">
+        <DialogTitle>Photos attached</DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+            <Chip color="success" label={`${photoResult?.attached ?? 0} attached`} />
+            {!!photoResult?.unmatched?.length
+              && <Chip color="warning" label={`${photoResult.unmatched.length} no matching learner`} />}
+            {!!photoResult?.errors?.length
+              && <Chip color="error" label={`${photoResult.errors.length} rejected`} />}
+          </Box>
+          <Typography variant="body2" color="text.secondary">
+            Photos are matched to learners by the admission number in the file name — a photo of
+            learner 651 should be named <strong>651.jpg</strong>.
+          </Typography>
+          {!!photoResult?.unmatched?.length && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              No learner has these admission numbers: {photoResult.unmatched.join(', ')}
+            </Alert>
+          )}
+          {!!photoResult?.errors?.length && (
+            <Table size="small" sx={{ mt: 2 }}>
+              <TableHead><TableRow><TableCell>File</TableCell><TableCell>Reason</TableCell></TableRow></TableHead>
+              <TableBody>
+                {photoResult.errors.map((x, i) => (
+                  <TableRow key={i}><TableCell>{x.name}</TableCell><TableCell>{x.reason}</TableCell></TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DialogContent>
+        <DialogActions><Button onClick={() => setPhotoResult(null)}>Close</Button></DialogActions>
+      </Dialog>
 
       {error && (
         <Dialog open onClose={() => setError('')} fullWidth maxWidth="xs">

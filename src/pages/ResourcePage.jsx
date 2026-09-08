@@ -11,6 +11,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import api from '../api';
 import { exportCsv } from '../exportCsv';
 import ImportStudents from '../components/ImportStudents';
+import ImageField from '../components/ImageField';
+import LearnerPhoto from '../components/LearnerPhoto';
+import { studentPhotoUrl } from '../branding';
 import RESOURCES from '../resources';
 
 export default function ResourcePage() {
@@ -59,8 +62,14 @@ export default function ResourcePage() {
   };
 
   async function save() {
+    /* A blank text field means "not supplied" and is dropped, but a cleared
+     * image means "remove the one on file" — so an empty image is sent. */
     const body = Object.fromEntries(
-      cfg.fields.map((f) => [f.name, editing[f.name] === '' ? undefined : editing[f.name]])
+      cfg.fields.map((f) => {
+        const v = editing[f.name];
+        if (f.type === 'image') return [f.name, v];
+        return [f.name, v === '' ? undefined : v];
+      }).filter(([, v]) => v !== undefined)
     );
     try {
       if (editing.id) await api.put(`/${key}/${editing.id}`, body);
@@ -102,7 +111,7 @@ export default function ResourcePage() {
               <TableRow>
                 {cfg.columns.map((c) => (
                   <TableCell key={c} sx={{ fontWeight: 700, whiteSpace: 'nowrap', textTransform: 'capitalize' }}>
-                    {c.replaceAll('_', ' ').replace(' id', '')}
+                    {c === 'photo_updated_at' ? 'Photo' : c.replaceAll('_', ' ').replace(' id', '')}
                   </TableCell>
                 ))}
                 <TableCell align="right" />
@@ -111,7 +120,13 @@ export default function ResourcePage() {
             <TableBody>
               {rows.map((row) => (
                 <TableRow key={row.id ?? row.key} hover>
-                  {cfg.columns.map((c) => <TableCell key={c}>{renderCell(row, c)}</TableCell>)}
+                  {cfg.columns.map((c) => (
+                    <TableCell key={c}>
+                      {c === 'photo_updated_at'
+                        ? <LearnerPhoto student={row} size={34} />
+                        : renderCell(row, c)}
+                    </TableCell>
+                  ))}
                   <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                     <IconButton size="small" onClick={() => setEditing(row)}><EditIcon fontSize="small" /></IconButton>
                     <IconButton size="small" color="error" onClick={() => remove(row.id)}><DeleteIcon fontSize="small" /></IconButton>
@@ -139,6 +154,14 @@ export default function ResourcePage() {
               value,
               onChange: (e) => setEditing((s) => ({ ...s, [f.name]: e.target.value })),
             };
+            if (f.type === 'image') {
+              return (
+                <ImageField key={f.name} label={f.label} value={editing[f.name]}
+                  currentUrl={editing.id && editing.photo_updated_at
+                    ? studentPhotoUrl(editing.id, editing.photo_updated_at) : null}
+                  onChange={(v) => setEditing((st) => ({ ...st, [f.name]: v }))} />
+              );
+            }
             if (f.type === 'ref') {
               return (
                 <TextField select {...common}>

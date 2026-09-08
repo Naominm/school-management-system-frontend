@@ -6,7 +6,7 @@ import {
 import api from '../api';
 import GradeStamp from '../components/GradeStamp';
 import SchoolHeader from '../components/SchoolHeader';
-import { useAuthedImage, studentPhotoUrl } from '../branding';
+import LearnerPhoto from '../components/LearnerPhoto';
 import { subjectCode, bandKey } from '../reportFormat';
 
 /**
@@ -25,22 +25,6 @@ const bandHex = (grade) => BAND_HEX[bandKey(grade)] || '#818181';
 const periodKey = (m) => `${m.academic_year} · Term ${m.term}`;
 
 /* ── Pieces ────────────────────────────────────────────────────────────── */
-
-function Photo({ student, size = 72 }) {
-  const src = useAuthedImage(student.has_photo ? studentPhotoUrl(student.id, student.photo_updated_at) : null);
-  const initials = `${student.first_name?.[0] || ''}${student.last_name?.[0] || ''}`.toUpperCase();
-  return (
-    <Box sx={{
-      width: size, height: size, flexShrink: 0, borderRadius: 1, overflow: 'hidden',
-      border: '1px solid', borderColor: 'divider', bgcolor: 'report.mist',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      {src
-        ? <Box component="img" src={src} alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        : <Typography sx={{ fontSize: size * 0.32, fontWeight: 600, color: 'primary.main' }}>{initials || '—'}</Typography>}
-    </Box>
-  );
-}
 
 function Tile({ label, value, accent }) {
   return (
@@ -157,7 +141,7 @@ function LearnerProgress({ student, scale }) {
     return (
       <Paper sx={{ p: 3, mb: 2 }}>
         <Stack direction="row" spacing={2} alignItems="center">
-          <Photo student={student} />
+          <LearnerPhoto student={student} size={72} />
           <Box>
             <Typography variant="h6">{student.first_name} {student.last_name}</Typography>
             <Typography variant="body2" color="text.secondary">
@@ -189,7 +173,7 @@ function LearnerProgress({ student, scale }) {
   return (
     <Paper sx={{ p: 3, mb: 2 }}>
       <Stack direction="row" spacing={2} alignItems="center" sx={{ flexWrap: 'wrap', gap: 2 }}>
-        <Photo student={student} />
+        <LearnerPhoto student={student} size={72} />
         <Box sx={{ flex: 1, minWidth: 200 }}>
           <Typography variant="h6">{student.first_name} {student.last_name}</Typography>
           <Typography variant="body2" color="text.secondary">

@@ -1,6 +1,7 @@
 import { Box, Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody, Stack, Divider } from '@mui/material';
-import { useBranding, useAuthedImage, studentPhotoUrl, teacherSignatureUrl } from '../branding';
+import { useBranding, useAuthedImage, teacherSignatureUrl } from '../branding';
 import GradeStamp from './GradeStamp';
+import LearnerPhoto from './LearnerPhoto';
 import { subjectCode, bandKey, rangeLabel } from '../reportFormat';
 
 /**
@@ -42,22 +43,6 @@ function Crest({ school, logoUrl }) {
 }
 
 /* ── Learner block ─────────────────────────────────────────────────────── */
-
-function Photo({ student, size = 96 }) {
-  const src = useAuthedImage(student.has_photo ? studentPhotoUrl(student.id, student.photo_updated_at) : null);
-  const initials = `${student.first_name?.[0] || ''}${student.last_name?.[0] || ''}`.toUpperCase();
-  return (
-    <Box sx={{
-      width: size, height: size, flexShrink: 0, borderRadius: 1, overflow: 'hidden',
-      border: '1px solid', borderColor: 'divider', bgcolor: 'report.mist',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      {src
-        ? <Box component="img" src={src} alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        : <Typography sx={{ fontSize: size * 0.3, fontWeight: 600, color: 'primary.main' }}>{initials || '—'}</Typography>}
-    </Box>
-  );
-}
 
 /**
  * A column per learning area, coloured by band. Plain SVG: it is a handful of
@@ -249,7 +234,7 @@ export default function ReportCardView({ card, student, headerRight }) {
 
         <Box sx={{ p: 2 }}>
           <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap', gap: 2, alignItems: 'flex-start' }}>
-            <Photo student={student} />
+            <LearnerPhoto student={student} size={96} />
             <Box sx={{ minWidth: 180 }}>
               <Typography sx={{ fontWeight: 600, fontSize: 15 }}>
                 {`${student.first_name} ${student.last_name}`.toUpperCase()}

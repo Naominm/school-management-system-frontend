@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Box, Paper, Typography, TextField, MenuItem, Button, Table, TableHead, TableRow, TableCell, TableBody, Chip, Grid, Alert, TableContainer } from '@mui/material';
 import api from '../api';
 import { usePrintBrand } from '../branding';
+import LearnerPhoto from '../components/LearnerPhoto';
 import SchoolHeader from '../components/SchoolHeader';
 import GradeStamp from '../components/GradeStamp';
 import { meritListPdf } from '../exportPdf';
@@ -120,7 +121,12 @@ export default function MeritList() {
                 {data.merit_list.map((r) => (
                   <TableRow key={r.student_id} hover>
                     <TableCell>{r.position}</TableCell>
-                    <TableCell>{r.last_name} {r.first_name}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <LearnerPhoto student={{ ...r, id: r.student_id }} size={28} rounded />
+                        <span>{r.last_name} {r.first_name}</span>
+                      </Box>
+                    </TableCell>
                     <TableCell>{r.admission_number || '—'}</TableCell>
                     {areas.map((a) => {
                       const m = r.marks?.[a.id];
