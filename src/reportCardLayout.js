@@ -1,5 +1,6 @@
 import { PALETTE, hexToRgb } from './pdfTheme';
 import { subjectCode, rangeLabel } from './reportFormat';
+import { box, label, clip, letterhead, titleBand, finish } from './pdfChrome';
 
 /**
  * The printed CBC report card.
@@ -33,75 +34,7 @@ const fill = (doc, c) => doc.setFillColor(c[0], c[1], c[2]);
 const ink = (doc, c) => doc.setTextColor(c[0], c[1], c[2]);
 const stroke = (doc, c) => doc.setDrawColor(c[0], c[1], c[2]);
 
-function box(doc, x, y, w, h, colour) {
-  fill(doc, colour);
-  doc.rect(x, y, w, h, 'F');
-}
-
-function label(doc, text, x, y, { size = 8, weight = 'bold', colour = INK, align = 'left', style } = {}) {
-  doc.setFont('helvetica', style || weight);
-  doc.setFontSize(size);
-  ink(doc, colour);
-  doc.text(String(text ?? ''), x, y, { align });
-}
-
-/** Truncate to fit a column, so a long subject name never runs into the next. */
-function clip(doc, text, width, size, weight = 'normal') {
-  doc.setFont('helvetica', weight);
-  doc.setFontSize(size);
-  const s = String(text ?? '');
-  if (doc.getTextWidth(s) <= width) return s;
-  let out = s;
-  while (out.length > 1 && doc.getTextWidth(`${out}…`) > width) out = out.slice(0, -1);
-  return `${out}…`;
-}
-
 /* ── Page furniture ────────────────────────────────────────────────────── */
-
-/** The vertical spine down the left edge: green at the crest, cyan below. */
-function spine(doc, accent) {
-  doc.setLineWidth(18);
-  stroke(doc, GREEN);
-  doc.line(14, 6, 14, 68);
-  stroke(doc, accent);
-  doc.line(14, 67, 14, 835);
-  doc.setLineWidth(1);
-}
-
-/** The motto bar and colour blocks along the bottom edge. */
-function footerBand(doc, school, accent) {
-  const y = 817.9;
-  const h = 19.2;
-  box(doc, 416.1, y, 18, h, GREEN);
-  box(doc, 434.1, y, 18, h, GREEN);
-  box(doc, 452.1, y, RIGHT - 452.1 + 21, h, accent);
-  if (school?.motto) {
-    label(doc, `School Motto: ${school.motto}`.toUpperCase(), RIGHT + 15, y + 13,
-      { size: 7.5, colour: WHITE, align: 'right', style: 'bolditalic' });
-  }
-}
-
-/** Crest, school name and the contact block. */
-function crest(doc, school, logo) {
-  if (logo) {
-    try { doc.addImage(logo, M, 20, 55, 55, undefined, 'FAST'); } catch { /* printed without */ }
-  }
-  const mid = W / 2;
-  label(doc, (school?.name || 'School').toUpperCase(), mid, 32, { size: 12, colour: GREEN_DARK, align: 'center' });
-
-  const lines = [
-    school?.address && `Address: ${school.address}`,
-    school?.phone && `Tel: ${school.phone}`,
-    school?.email && `Email: ${school.email}`,
-  ].filter(Boolean);
-  lines.forEach((line, i) => label(doc, line, mid, 50 + i * 16, { size: 9, align: 'center' }));
-}
-
-/** The cyan band naming the period this card covers. */
-function periodBand(doc, title, accent) {
-  box(doc, 23, 90.5, W - 46, 20.4, accent);
-  label(doc, title.toUpperCase(), W / 2, 104.5, { size: 10.5, colour: WHITE, align: 'center' });
-}
 
 /* ── Learner block ─────────────────────────────────────────────────────── */
 
@@ -144,39 +77,85 @@ function learnerIdentity(doc, student, term, year) {
 }
 
 /**
- * A column per learning area, scaled 0–100% and coloured by band, with the
- * band boundaries as gridlines. It says at a glance which subjects carry the
- * learner and which need work — the thing a table of numbers makes you work
- * out for yourself.
+ * Two series over the learning areas: this learner as columns, the class
+ * average as a line across them.
+ *
+ * A mark on its own says how the learner did. Against the class it says
+ * something a table cannot — whether a low score is this learner or a hard
+ * subject, and where they are pulling ahead of their peers. The y axis is
+ * banded by performance level, so the chart is read in the same terms as
+ * the grades beside it.
  */
-function subjectChart(doc, marks, x, y, w, h) {
+function subjectChart(doc, marks, scale, x, y, w, h, learnerName) {
   if (!marks.length) return;
-  const base = y + h - 12;             // baseline, leaving room for the codes
-  const top = y + 8;
+  const base = y + h - 11;             // baseline, leaving room for the codes
+  const top = y + 13;                  // and for the legend above
   const plot = base - top;
+  const at = (pct) => base - (Math.max(0, Math.min(100, pct)) / 100) * plot;
 
+  /* Gridlines at the band boundaries, so a column can be read off as a
+   * performance level rather than a percentage. */
   stroke(doc, CLOUD);
-  doc.setLineWidth(0.5);
-  for (const pct of [25, 50, 75, 100]) {
-    const gy = base - (pct / 100) * plot;
-    doc.line(x, gy, x + w, gy);
-    label(doc, `${pct}`, x - 4, gy + 2.5, { size: 5.5, weight: 'normal', colour: SLATE, align: 'right' });
+  doc.setLineWidth(0.4);
+  const ticks = bandTicks(scale);
+  for (const t of ticks) {
+    doc.line(x, at(t.at), x + w, at(t.at));
+    label(doc, t.label, x - 3, at(t.at) + 2, { size: 5, weight: 'normal', colour: SLATE, align: 'right' });
   }
 
   const slot = w / marks.length;
-  const barW = Math.min(14, slot * 0.62);
+  const barW = Math.min(13, slot * 0.5);
+
   marks.forEach((m, i) => {
     const cx = x + slot * i + slot / 2;
-    const pct = Math.max(0, Math.min(100, m.percentage ?? 0));
-    const bh = (pct / 100) * plot;
-    box(doc, cx - barW / 2, base - bh, barW, bh, bandColour(m.band));
-    label(doc, subjectCode(m.learning_area), cx, base + 8, { size: 5.5, colour: SLATE, align: 'center' });
+    const yTop = at(m.percentage ?? 0);
+    box(doc, cx - barW / 2, yTop, barW, base - yTop, bandColour(m.band));
+    label(doc, subjectCode(m.learning_area), cx, base + 7.5, { size: 5.2, colour: SLATE, align: 'center' });
   });
+
+  /* The class average, drawn over the columns as a connected line. */
+  const avg = marks.map((m, i) => (m.class_average == null ? null : {
+    x: x + slot * i + slot / 2, y: at(m.class_average),
+  }));
+  stroke(doc, INK);
+  doc.setLineWidth(0.9);
+  for (let i = 1; i < avg.length; i += 1) {
+    if (avg[i - 1] && avg[i]) doc.line(avg[i - 1].x, avg[i - 1].y, avg[i].x, avg[i].y);
+  }
+  fill(doc, INK);
+  for (const p of avg) if (p) doc.circle(p.x, p.y, 1.4, 'F');
 
   stroke(doc, SLATE);
   doc.setLineWidth(0.7);
   doc.line(x, base, x + w, base);
   doc.setLineWidth(1);
+
+  /* Legend: which series is the learner, which is the class. */
+  const hasAvg = avg.some(Boolean);
+  box(doc, x, y + 2, 7, 6, GREEN);
+  label(doc, clip(doc, learnerName, 90, 5.5, 'bold'), x + 10, y + 7, { size: 5.5, colour: SLATE });
+  if (hasAvg) {
+    const lx = x + 108;
+    stroke(doc, INK);
+    doc.setLineWidth(0.9);
+    doc.line(lx, y + 5, lx + 7, y + 5);
+    fill(doc, INK);
+    doc.circle(lx + 3.5, y + 5, 1.4, 'F');
+    label(doc, 'Class average', lx + 10, y + 7, { size: 5.5, colour: SLATE });
+    doc.setLineWidth(1);
+  }
+}
+
+/**
+ * Where to rule the chart's y axis. The school's own bands when it has them,
+ * so the gridlines mean something; plain quarters otherwise.
+ */
+function bandTicks(scale) {
+  const bands = (scale || []).filter((g) => g.min_percentage > 0);
+  if (bands.length >= 3 && bands.length <= 8) {
+    return bands.map((g) => ({ at: g.min_percentage, label: g.grade }));
+  }
+  return [25, 50, 75, 100].map((v) => ({ at: v, label: String(v) }));
 }
 
 const BAND_COLOURS = { EE: GREEN, ME: CYAN, AE: AMBER, BE: RED };
@@ -400,13 +379,13 @@ export function drawReportCard(doc, { card, student, assets = {} }) {
   const period = ['Academic Report Form', student.class_name, `Term ${card.term}`, `(${card.academic_year})`]
     .filter(Boolean).join('  -  ');
 
-  spine(doc, accent);
-  crest(doc, school, assets.logo);
-  periodBand(doc, period, accent);
+  letterhead(doc, school, assets.logo);
+  titleBand(doc, period, accent);
 
   photoFrame(doc, student, assets.photos?.get(student.id), accent);
   learnerIdentity(doc, student, card.term, card.academic_year);
-  subjectChart(doc, student.marks, 310, 116, RIGHT - 310, 92);
+  subjectChart(doc, student.marks, card.grading_scale, 305, 114, RIGHT - 305, 96,
+    `${student.first_name} ${student.last_name}`);
 
   let y = tiles(doc, student, 219.3);
   y = marksTable(doc, student.marks, y + 14);
@@ -418,24 +397,24 @@ export function drawReportCard(doc, { card, student, assets = {} }) {
    * the footer, carry them onto a second page for that learner. */
   const tail = descriptorsHeight(card.grading_scale || []) + 74;
   if (y + tail > FOOTER_TOP) {
-    footerBand(doc, school, accent);
     doc.addPage();
-    spine(doc, accent);
-    crest(doc, school, assets.logo);
-    periodBand(doc, `${period}  (continued)`, accent);
+    letterhead(doc, school, assets.logo);
+    titleBand(doc, `${period}  (continued)`, accent);
     y = 130;
   }
 
   y = descriptors(doc, card.grading_scale || [], card.bands || [], y + 16);
   verification(doc, student, assets.qrs?.get(student.id), y + 14);
-
-  footerBand(doc, school, accent);
 }
 
-/** One page per learner, in the order the server returned them. */
+/**
+ * One page per learner, in the order the server returned them, then the
+ * shared finish: spine, motto band, watermark and page numbers on every page.
+ */
 export function drawReportCards(doc, card, assets) {
   card.students.forEach((student, i) => {
     if (i > 0) doc.addPage();
     drawReportCard(doc, { card, student, assets });
   });
+  finish(doc, { ...(card.school || {}), schoolName: card.school?.name }, assets?.logo);
 }

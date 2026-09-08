@@ -158,8 +158,18 @@ export default function Markbook() {
   async function exportMarkbookPdf() {
     if (!grid) return;
     const brand = await printBrand();
-    markbookPdf({ className, term, year, students: grid.students, areas: columns,
-      scoreOf: (sid, laid) => scoreOf(sid, laid), filename: `markbook-${stamp}`, brand });
+    /* The recorded grade per cell, so the exported sheet can tint each score
+     * by its performance band. Built once rather than searched per cell. */
+    const grades = new Map((grid.marks || []).map((m) => [cellKey(m.student_id, m.learning_area_id), m.grade]));
+    markbookPdf({
+      className, term, year,
+      students: grid.students,
+      areas: columns,
+      scoreOf: (sid, laid) => scoreOf(sid, laid),
+      gradeOf: (sid, laid) => grades.get(cellKey(sid, laid)) || null,
+      filename: `markbook-${stamp}`,
+      brand,
+    });
   }
 
   async function downloadTemplate() {
