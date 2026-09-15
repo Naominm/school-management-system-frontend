@@ -114,8 +114,10 @@ export default function Notify() {
           {channel === 'sms' ? (
             <>
               SMS is not configured on this server, so notices will be recorded but not delivered.
-              Set <code>SMS_PROVIDER=africastalking</code>, <code>AT_USERNAME</code>,{' '}
-              <code>AT_API_KEY</code> and <code>AT_SENDER_ID</code> to send them.
+              {audiences?.sms_problem
+                ? <> <strong>{audiences.sms_problem}</strong></>
+                : <> Set <code>SMS_PROVIDER=africastalking</code>, <code>AT_USERNAME</code> and{' '}
+                  <code>AT_API_KEY</code> to send them.</>}
             </>
           ) : (
             <>
