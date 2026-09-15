@@ -2,6 +2,7 @@ import { Box, Paper, Typography, Alert, Stack } from '@mui/material';
 import { useBranding } from '../branding';
 import BrandingEditor from '../components/BrandingEditor';
 import ReportCardSetup from '../components/ReportCardSetup';
+import SchoolFeatures from '../components/SchoolFeatures';
 import SchoolHeader from '../components/SchoolHeader';
 
 /**
@@ -34,6 +35,11 @@ export default function SchoolBranding() {
           <Paper sx={{ p: 3 }}>
             <Typography variant="subtitle2" gutterBottom>Report card setup</Typography>
             <ReportCardSetup />
+          </Paper>
+
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="subtitle2" gutterBottom>Features</Typography>
+            <SchoolFeatures />
           </Paper>
         </Stack>
       )}

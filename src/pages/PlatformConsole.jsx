@@ -264,6 +264,14 @@ export default function PlatformConsole() {
                     .map((k) => catalogue.find((f) => f.key === k)?.label || k).join(', ')}
                 </Typography>
               )}
+              {/* What the school's own administrator hid, among what you allow. */}
+              {!!s.hidden_features?.filter((k) => !s.disabled_features?.includes(k)).length && (
+                <Typography variant="caption" color="text.secondary">
+                  Hidden by the school: {s.hidden_features
+                    .filter((k) => !s.disabled_features?.includes(k))
+                    .map((k) => catalogue.find((f) => f.key === k)?.label || k).join(', ')}
+                </Typography>
+              )}
 
               <Stack direction="row" spacing={1} sx={{ mt: 'auto', flexWrap: 'wrap', gap: 1 }}>
                 {s.locked
@@ -288,9 +296,11 @@ export default function PlatformConsole() {
         <DialogTitle>Features for {featuresFor?.name}</DialogTitle>
         <DialogContent dividers>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-            A feature switched off disappears from this school&apos;s menus and its pages and API
-            are refused. Records already kept are not deleted — switching it back on restores them.
-            Learners, classes, marks and report cards are always on.
+            A feature switched off disappears completely for this school — menus, pages,
+            dashboards and the API — as if it did not exist. The school&apos;s own administrator can
+            hide more from their branding page, but can never switch on what you switch off.
+            Records are not deleted; switching a feature back on restores them. Learners, classes,
+            marks and report cards are always on.
           </Typography>
           <Stack divider={<Divider flexItem />}>
             {catalogue.map((f) => {
