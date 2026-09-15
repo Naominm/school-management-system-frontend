@@ -25,6 +25,7 @@ export const RESOURCE_FEATURES = {
   schemes: 'teaching_records',
   'lesson-plans': 'teaching_records',
   notes: 'teaching_records',
+  notifications: 'notices',
 };
 
 /** The feature a pathname belongs to, or null for core pages. */
@@ -34,9 +35,15 @@ export function featureForPath(pathname) {
   return m ? RESOURCE_FEATURES[m[1]] || null : null;
 }
 
-/** `enabled(key)` for the signed-in school. Everything is on until told otherwise. */
+/**
+ * `enabled(key)` for the signed-in school.
+ *
+ * Built from the features the school HAS — the server never sends the ones
+ * switched off — so a gated item stays hidden until the answer arrives rather
+ * than appearing and then vanishing, which would give it away.
+ */
 export function useFeatures() {
-  const { branding } = useBranding();
-  const off = new Set(branding?.disabled_features || []);
-  return { enabled: (key) => !key || !off.has(key), disabled: off };
+  const { branding, loaded } = useBranding();
+  const on = new Set(branding?.enabled_features || []);
+  return { enabled: (key) => !key || on.has(key), loaded };
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import {
-  Alert, AppBar, Toolbar, Typography, Drawer, List, ListItemButton, ListItemIcon,
+  AppBar, Toolbar, LinearProgress, Typography, Drawer, List, ListItemButton, ListItemIcon,
   ListItemText, Box, IconButton, Divider, Avatar, Tooltip, useMediaQuery,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -72,13 +72,13 @@ export default function AppLayout() {
     { to: '/change-password', label: 'Change password', icon: <KeyIcon fontSize="small" />, roles: ['admin', 'teacher', 'staff', 'parent', 'learner'] },
   ];
 
-  const { enabled } = useFeatures();
+  const { enabled, loaded } = useFeatures();
   const { pathname } = useLocation();
   const visible = (roles) => roles.includes(user?.role);
-  /* A page belonging to a feature this school has switched off. The server
-   * refuses its API either way; this says so plainly instead of a broken page. */
-  const blockedFeature = featureForPath(pathname);
-  const pageBlocked = blockedFeature && !enabled(blockedFeature);
+  /* The feature, if any, the current address belongs to. Switched off, the
+   * address behaves exactly like one that does not exist — back to the home
+   * page, no message — so nobody learns there was something there. */
+  const gated = featureForPath(pathname);
 
   const drawer = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -165,12 +165,10 @@ export default function AppLayout() {
       </Drawer>
 
       <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 3 }, mt: { xs: 7, md: 0 }, minWidth: 0 }}>
-        {pageBlocked ? (
-          <Alert severity="info" sx={{ maxWidth: 560 }}>
-            This part of the system is not enabled for your school. Contact the platform
-            administrator if you need it.
-          </Alert>
-        ) : <Outlet />}
+        {!gated ? <Outlet />
+          : !loaded ? <LinearProgress />
+            : enabled(gated) ? <Outlet />
+              : <Navigate to="/" replace />}
       </Box>
     </Box>
   );

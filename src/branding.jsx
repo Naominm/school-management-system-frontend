@@ -21,20 +21,26 @@ export const schoolLogoUrl = (schoolId, version) =>
 export function BrandingProvider({ children }) {
   const { user } = useAuth();
   const [branding, setBranding] = useState(null);
+  /* Whether the answer is in yet. A switched-off feature is hidden by what
+   * this returns, so until it arrives nothing gated is shown — hiding it after
+   * a flash would show it. */
+  const [loaded, setLoaded] = useState(false);
 
   async function refresh() {
-    if (!user || !user.school_id) { setBranding(null); return; }
+    if (!user || !user.school_id) { setBranding(null); setLoaded(true); return; }
     try { setBranding((await api.get('/branding')).data); }
     catch { setBranding(null); }
+    finally { setLoaded(true); }
   }
 
-  useEffect(() => { refresh(); /* eslint-disable-next-line */ }, [user?.school_id]);
+  useEffect(() => { setLoaded(false); refresh(); /* eslint-disable-next-line */ }, [user?.school_id]);
 
   const value = useMemo(() => ({
     branding,
+    loaded,
     refresh,
     logoUrl: branding?.has_logo ? schoolLogoUrl(branding.id, branding.logo_updated_at) : null,
-  }), [branding]);
+  }), [branding, loaded]);
 
   return <BrandingContext.Provider value={value}>{children}</BrandingContext.Provider>;
 }

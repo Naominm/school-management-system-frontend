@@ -87,8 +87,8 @@ export default function BrandingEditor({ school, onSaved, compact }) {
           <Typography variant="caption" color="text.secondary">
             <strong>PNG with a transparent background is recommended</strong> — roughly square,
             512×512 or larger, under 512KB. JPEG, WEBP, GIF and SVG are also accepted and are
-            converted automatically for PDFs. Used on the sidebar, page headers, the merit list,
-            report cards and as the watermark on exported documents.
+            converted automatically for PDFs. Used on the sidebar, page headers, report cards
+            and as the watermark on every exported document.
             {file ? ` Selected: ${file.name}` : ''}
           </Typography>
           {/* Printed on every report card: the contact block under the crest,

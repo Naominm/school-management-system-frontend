@@ -30,7 +30,7 @@ export default function Dashboard() {
       <Box>
         <SchoolHeader title={`Welcome, ${user?.full_name || ''}`} />
         <Typography color="text.secondary">
-          Use the menu to view announcements, timetables, assignments and report cards.
+          Use the menu to find your school&apos;s records and report cards.
         </Typography>
       </Box>
     );
@@ -48,7 +48,10 @@ export default function Dashboard() {
             <Grid item xs={6} md={3}><Stat title="Learning areas" value={data.totals.learning_areas} /></Grid>
           </Grid>
 
+          {/* Fees only appear for a school that has them — the server leaves them
+              out otherwise, and the class sizes take the full width. */}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
+            {data.fees && (
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>Fees</Typography>
@@ -64,7 +67,8 @@ export default function Dashboard() {
                 </Stack>
               </Paper>
             </Grid>
-            <Grid item xs={12} md={6}>
+            )}
+            <Grid item xs={12} md={data.fees ? 6 : 12}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>Class sizes</Typography>
                 {data.class_sizes.map((c) => (

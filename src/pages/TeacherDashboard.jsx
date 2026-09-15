@@ -29,10 +29,16 @@ export default function TeacherDashboard() {
         )}
       </Typography>
 
+      {/* A count is shown only when the server sends it — it leaves out the ones
+          belonging to features this school does not have. */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} md={4}><Stat title="Marks recorded (this period)" value={data.stats.marks_recorded_this_period} /></Grid>
-        <Grid item xs={12} md={4}><Stat title="Assignments created" value={data.stats.assignments_created} /></Grid>
-        <Grid item xs={12} md={4}><Stat title="Attendance records today" value={data.stats.attendance_records_today} /></Grid>
+        {[
+          ['Marks recorded (this period)', data.stats.marks_recorded_this_period],
+          ['Assignments created', data.stats.assignments_created],
+          ['Attendance records today', data.stats.attendance_records_today],
+        ].filter(([, v]) => v !== undefined).map(([title, value], _, shown) => (
+          <Grid item xs={12} md={12 / shown.length} key={title}><Stat title={title} value={value} /></Grid>
+        ))}
       </Grid>
 
       <Grid container spacing={2}>

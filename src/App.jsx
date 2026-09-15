@@ -58,6 +58,9 @@ export default function App() {
             <Route path="/notices" element={<Notify />} />
             <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/r/:key" element={<ResourcePage />} />
+            {/* Unknown addresses go home — the same place a switched-off feature
+                sends you, so the two cannot be told apart. */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
     </BrowserRouter>

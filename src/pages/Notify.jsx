@@ -78,18 +78,21 @@ export default function Notify() {
 
   const options = audiences ? [...audiences.groups, ...audiences.classes] : [];
   const chosen = options.find((o) => o.key === audience);
-  const reach = chosen ? (channel === 'sms' ? chosen.sms : chosen.email) : 0;
+  /* SMS exists on this page only for a school that has it. Switched off, the
+   * server sends nothing about it, and the page has no toggle, no SMS wording
+   * and no SMS counts — it is simply an email page. */
+  const smsEnabled = audiences?.sms_enabled === true;
+  const mode = smsEnabled ? channel : 'email';
+  const reach = chosen ? (mode === 'sms' ? chosen.sms : chosen.email) : 0;
   const size = segmentsFor(body);
-  const configured = channel === 'sms' ? audiences?.sms_configured : audiences?.mailer_configured;
-  const smsEnabled = audiences?.sms_enabled !== false;
-  useEffect(() => { if (audiences && !smsEnabled) setChannel('email'); }, [audiences, smsEnabled]);
+  const configured = mode === 'sms' ? audiences?.sms_configured : audiences?.mailer_configured;
 
   async function send() {
     setBusy(true);
     setError('');
     setResult(null);
     try {
-      const { data } = await api.post('/notifications/send', { audience, channel, subject, body });
+      const { data } = await api.post('/notifications/send', { audience, channel: mode, subject, body });
       setResult(data);
       setSubject('');
       setBody('');
@@ -105,13 +108,13 @@ export default function Notify() {
 
   return (
     <Box>
-      <SchoolHeader title="Notices" subtitle="Text or email parents and staff" />
+      <SchoolHeader title="Notices" subtitle={smsEnabled ? 'Text or email parents and staff' : 'Email parents and staff'} />
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
       {audiences && !configured && (
         <Alert severity="warning" sx={{ mb: 2 }}>
-          {channel === 'sms' ? (
+          {mode === 'sms' ? (
             <>
               SMS is not configured on this server, so notices will be recorded but not delivered.
               {audiences?.sms_problem
@@ -128,7 +131,7 @@ export default function Notify() {
         </Alert>
       )}
 
-      {audiences?.sms_sandbox && channel === 'sms' && (
+      {audiences?.sms_sandbox && mode === 'sms' && (
         <Alert severity="info" sx={{ mb: 2 }}>
           SMS is in <strong>sandbox mode</strong>. Messages go to the Africa&apos;s Talking simulator,
           not to real phones — open the simulator and launch a phone with one of the recipients&apos;
@@ -149,19 +152,21 @@ export default function Notify() {
 
       <Paper sx={{ p: 3, mb: 2, maxWidth: 720 }}>
         <Stack spacing={2}>
-          <ToggleButtonGroup exclusive size="small" value={channel}
-            onChange={(_, v) => v && setChannel(v)}>
-            <ToggleButton value="sms" disabled={!smsEnabled}>Text message</ToggleButton>
-            <ToggleButton value="email">Email</ToggleButton>
-          </ToggleButtonGroup>
+          {smsEnabled && (
+            <ToggleButtonGroup exclusive size="small" value={channel}
+              onChange={(_, v) => v && setChannel(v)}>
+              <ToggleButton value="sms">Text message</ToggleButton>
+              <ToggleButton value="email">Email</ToggleButton>
+            </ToggleButtonGroup>
+          )}
 
           <TextField select label="Send to" value={audience} onChange={(e) => setAudience(e.target.value)}
             helperText={chosen
-              ? `${reach} ${reach === 1 ? 'recipient' : 'recipients'} with a ${channel === 'sms' ? 'phone number' : 'email address'} on file`
+              ? `${reach} ${reach === 1 ? 'recipient' : 'recipients'} with a ${mode === 'sms' ? 'phone number' : 'email address'} on file`
               : `Taken from the roster; someone with two children here receives one notice.${
-                channel === 'sms' ? ' The parent phone is used, falling back to the emergency contact number.' : ''}`}>
+                mode === 'sms' ? ' The parent phone is used, falling back to the emergency contact number.' : ''}`}>
             {options.map((o) => {
-              const n = channel === 'sms' ? o.sms : o.email;
+              const n = mode === 'sms' ? o.sms : o.email;
               return (
                 <MenuItem key={o.key} value={o.key} disabled={!n}>
                   {o.label}
@@ -172,13 +177,13 @@ export default function Notify() {
             })}
           </TextField>
 
-          {channel === 'email' && (
+          {mode === 'email' && (
             <TextField label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} required />
           )}
 
           <TextField label="Message" value={body} onChange={(e) => setBody(e.target.value)}
-            multiline minRows={channel === 'sms' ? 4 : 6} required
-            helperText={channel === 'sms'
+            multiline minRows={mode === 'sms' ? 4 : 6} required
+            helperText={mode === 'sms'
               ? `${size.characters} characters · ${size.encoding} · ${size.segments} segment${size.segments === 1 ? '' : 's'} each${
                 reach ? ` · ${size.segments * reach} billed` : ''}${
                 size.encoding === 'UCS-2' ? ' — a curly quote, dash or emoji halves what fits' : ''}`
@@ -186,7 +191,7 @@ export default function Notify() {
 
           <Box>
             <Button variant="contained" startIcon={<SendIcon />} onClick={send}
-              disabled={busy || !audience || !body.trim() || !reach || (channel === 'email' && !subject.trim())}>
+              disabled={busy || !audience || !body.trim() || !reach || (mode === 'email' && !subject.trim())}>
               {busy ? 'Sending…' : `Send${reach ? ` to ${reach}` : ''}`}
             </Button>
           </Box>
