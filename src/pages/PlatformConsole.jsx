@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Box, Paper, Typography, Grid, Button, Chip, TextField, Alert, LinearProgress,
-  Dialog, DialogTitle, DialogContent, DialogActions, Stack, Divider,
+  Dialog, DialogTitle, DialogContent, DialogActions, Stack, Divider, Switch,
 } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
@@ -34,9 +34,14 @@ export default function PlatformConsole() {
   const [deleteFor, setDeleteFor] = useState(null);
   const [impact, setImpact] = useState(null);
   const [confirmCode, setConfirmCode] = useState('');
+  /* Feature switches: the catalogue from the server, and the school being edited. */
+  const [catalogue, setCatalogue] = useState([]);
+  const [featuresFor, setFeaturesFor] = useState(null);
+  const [offDraft, setOffDraft] = useState([]);
 
   async function load() {
     setBusy(true); setError('');
+    api.get('/platform/features').then((r) => setCatalogue(r.data)).catch(() => {});
     try { setSchools((await api.get('/platform/schools')).data); }
     catch (e) { setError(e.response?.data?.error || 'Could not load schools'); }
     finally { setBusy(false); }
@@ -89,6 +94,37 @@ export default function PlatformConsole() {
       await api.post(`/platform/schools/${lockFor.id}/lock`, { lock_reason: lockReason });
       setLockFor(null); setLockReason(''); setOk('School locked'); load();
     } catch (e) { setError(e.response?.data?.error || 'Could not lock school'); }
+  }
+
+  function openFeatures(s) {
+    setFeaturesFor(s);
+    setOffDraft(s.disabled_features || []);
+  }
+
+  /* Turning a feature off takes anything that depends on it with it — SMS
+   * cannot stay on once Notices is off. The server applies the same rule. */
+  function toggleFeature(key, on) {
+    setOffDraft((prev) => {
+      const next = new Set(prev);
+      if (on) {
+        next.delete(key);
+        const f = catalogue.find((x) => x.key === key);
+        if (f?.requires) next.delete(f.requires);
+      } else {
+        next.add(key);
+        catalogue.filter((x) => x.requires === key).forEach((x) => next.add(x.key));
+      }
+      return [...next];
+    });
+  }
+
+  async function saveFeatures() {
+    try {
+      await api.put(`/platform/schools/${featuresFor.id}/features`, { disabled: offDraft });
+      setOk(`Features updated for ${featuresFor.name}`);
+      setFeaturesFor(null);
+      load();
+    } catch (e) { setError(e.response?.data?.error || 'Could not update features'); }
   }
 
   async function unlock(s) {
@@ -222,6 +258,12 @@ export default function PlatformConsole() {
               </Stack>
 
               {s.locked && s.lock_reason && <Alert severity="error" sx={{ py: 0 }}>{s.lock_reason}</Alert>}
+              {!!s.disabled_features?.length && (
+                <Typography variant="caption" color="text.secondary">
+                  Switched off: {s.disabled_features
+                    .map((k) => catalogue.find((f) => f.key === k)?.label || k).join(', ')}
+                </Typography>
+              )}
 
               <Stack direction="row" spacing={1} sx={{ mt: 'auto', flexWrap: 'wrap', gap: 1 }}>
                 {s.locked
@@ -229,6 +271,7 @@ export default function PlatformConsole() {
                   : <Button size="small" color="error" startIcon={<LockIcon />} onClick={() => { setLockFor(s); setLockReason(''); }}>Lock</Button>}
                 <Button size="small" onClick={() => { setAdminFor(s); setAdmin(blankAdmin); }}>Add administrator</Button>
                 <Button size="small" startIcon={<EditIcon />} onClick={() => openEdit(s)}>Edit</Button>
+                <Button size="small" onClick={() => openFeatures(s)}>Features</Button>
                 <Button size="small" onClick={() => setBrandFor(s)}>Logo &amp; colour</Button>
                 <Button size="small" color="error" startIcon={<DeleteForeverIcon />} onClick={() => openDelete(s)}>Delete</Button>
               </Stack>
@@ -240,6 +283,40 @@ export default function PlatformConsole() {
       {!busy && !schools.length && (
         <Alert severity="info">No schools yet — create the first one above.</Alert>
       )}
+
+      <Dialog open={!!featuresFor} onClose={() => setFeaturesFor(null)} fullWidth maxWidth="sm">
+        <DialogTitle>Features for {featuresFor?.name}</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            A feature switched off disappears from this school&apos;s menus and its pages and API
+            are refused. Records already kept are not deleted — switching it back on restores them.
+            Learners, classes, marks and report cards are always on.
+          </Typography>
+          <Stack divider={<Divider flexItem />}>
+            {catalogue.map((f) => {
+              const on = !offDraft.includes(f.key);
+              const parentOff = f.requires && offDraft.includes(f.requires);
+              return (
+                <Box key={f.key} sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1, pl: f.requires ? 3 : 0 }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{f.label}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {parentOff ? `Needs ${catalogue.find((x) => x.key === f.requires)?.label} on.` : f.description}
+                    </Typography>
+                  </Box>
+                  <Switch checked={on} disabled={!!parentOff}
+                    onChange={(e) => toggleFeature(f.key, e.target.checked)}
+                    inputProps={{ 'aria-label': `${f.label} ${on ? 'on' : 'off'}` }} />
+                </Box>
+              );
+            })}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setFeaturesFor(null)}>Cancel</Button>
+          <Button variant="contained" onClick={saveFeatures}>Save</Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={!!lockFor} onClose={() => setLockFor(null)} fullWidth maxWidth="sm">
         <DialogTitle>Lock {lockFor?.name}?</DialogTitle>

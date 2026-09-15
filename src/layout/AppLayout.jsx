@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
-  AppBar, Toolbar, Typography, Drawer, List, ListItemButton, ListItemIcon,
+  Alert, AppBar, Toolbar, Typography, Drawer, List, ListItemButton, ListItemIcon,
   ListItemText, Box, IconButton, Divider, Avatar, Tooltip, useMediaQuery,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -24,6 +24,7 @@ import PaletteIcon from '@mui/icons-material/Palette';
 import { useAuth } from '../auth';
 import { useBranding } from '../branding';
 import RESOURCES from '../resources';
+import { useFeatures, featureForPath, PAGE_FEATURES, RESOURCE_FEATURES } from '../features';
 
 const drawerWidth = 264;
 
@@ -71,7 +72,13 @@ export default function AppLayout() {
     { to: '/change-password', label: 'Change password', icon: <KeyIcon fontSize="small" />, roles: ['admin', 'teacher', 'staff', 'parent', 'learner'] },
   ];
 
+  const { enabled } = useFeatures();
+  const { pathname } = useLocation();
   const visible = (roles) => roles.includes(user?.role);
+  /* A page belonging to a feature this school has switched off. The server
+   * refuses its API either way; this says so plainly instead of a broken page. */
+  const blockedFeature = featureForPath(pathname);
+  const pageBlocked = blockedFeature && !enabled(blockedFeature);
 
   const drawer = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -97,7 +104,7 @@ export default function AppLayout() {
       </Toolbar>
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.10)' }} />
       <List dense sx={{ flex: 1, overflowY: 'auto', px: 1 }}>
-        {specials.filter((s) => visible(s.roles)).map((s) => (
+        {specials.filter((s) => visible(s.roles) && enabled(PAGE_FEATURES[s.to])).map((s) => (
           <ListItemButton
             key={s.to} component={NavLink} to={s.to} end={s.to === '/'}
             onClick={() => setOpen(false)}
@@ -108,7 +115,7 @@ export default function AppLayout() {
           </ListItemButton>
         ))}
         <Divider sx={{ my: 1, borderColor: 'rgba(255,255,255,0.10)' }} />
-        {RESOURCES.filter((r) => visible(r.roles)).map((r) => (
+        {RESOURCES.filter((r) => visible(r.roles) && enabled(RESOURCE_FEATURES[r.key])).map((r) => (
           <ListItemButton
             key={r.key} component={NavLink} to={`/r/${r.key}`}
             onClick={() => setOpen(false)}
@@ -158,7 +165,12 @@ export default function AppLayout() {
       </Drawer>
 
       <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 3 }, mt: { xs: 7, md: 0 }, minWidth: 0 }}>
-        <Outlet />
+        {pageBlocked ? (
+          <Alert severity="info" sx={{ maxWidth: 560 }}>
+            This part of the system is not enabled for your school. Contact the platform
+            administrator if you need it.
+          </Alert>
+        ) : <Outlet />}
       </Box>
     </Box>
   );

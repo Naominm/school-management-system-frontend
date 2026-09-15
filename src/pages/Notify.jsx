@@ -78,6 +78,8 @@ export default function Notify() {
   const reach = chosen ? (channel === 'sms' ? chosen.sms : chosen.email) : 0;
   const size = segmentsFor(body);
   const configured = channel === 'sms' ? audiences?.sms_configured : audiences?.mailer_configured;
+  const smsEnabled = audiences?.sms_enabled !== false;
+  useEffect(() => { if (audiences && !smsEnabled) setChannel('email'); }, [audiences, smsEnabled]);
 
   async function send() {
     setBusy(true);
@@ -136,7 +138,7 @@ export default function Notify() {
         <Stack spacing={2}>
           <ToggleButtonGroup exclusive size="small" value={channel}
             onChange={(_, v) => v && setChannel(v)}>
-            <ToggleButton value="sms">Text message</ToggleButton>
+            <ToggleButton value="sms" disabled={!smsEnabled}>Text message</ToggleButton>
             <ToggleButton value="email">Email</ToggleButton>
           </ToggleButtonGroup>
 

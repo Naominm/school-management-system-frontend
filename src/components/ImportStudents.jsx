@@ -12,6 +12,7 @@ const TEMPLATE_COLUMNS = [
   { key: 'last_name', label: 'last_name' },
   { key: 'class', label: 'class' },
   { key: 'parent_email', label: 'parent_email' },
+  { key: 'parent_phone', label: 'parent_phone' },
   { key: 'gender', label: 'gender' },
   { key: 'date_of_birth', label: 'date_of_birth' },
   { key: 'address', label: 'address' },
@@ -20,7 +21,7 @@ const TEMPLATE_COLUMNS = [
 ];
 const TEMPLATE_EXAMPLE = [{
   admission_number: 'ADM-100', first_name: 'Wanjiru', last_name: 'Kamau',
-  class: 'Grade 4 Blue', parent_email: 'parent@example.com', gender: 'F',
+  class: 'Grade 4 Blue', parent_email: 'parent@example.com', parent_phone: '0712345678', gender: 'F',
   date_of_birth: '2015-03-14', address: 'Nairobi',
   emergency_contact: 'Jane Kamau', emergency_phone: '0712345678',
 }];
