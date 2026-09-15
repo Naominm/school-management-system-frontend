@@ -1,4 +1,4 @@
-import { Box, Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody, Stack, Divider } from '@mui/material';
+import { Box, Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody, Stack, Divider, useMediaQuery } from '@mui/material';
 import { useBranding, useAuthedImage, teacherSignatureUrl } from '../branding';
 import GradeStamp from './GradeStamp';
 import LearnerPhoto from './LearnerPhoto';
@@ -106,7 +106,7 @@ function Tile({ label, value, accent }) {
 function Tiles({ student }) {
   const level = student.performance_level;
   return (
-    <Stack direction="row" spacing={1.25} sx={{ flexWrap: 'wrap', gap: 1.25 }}>
+    <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap">
       <Tile label="Performance level" accent={level ? bandColour(level.grade) : undefined}
         value={level ? `${level.grade} (${level.band})` : '—'} />
       <Tile label="Total marks"
@@ -211,6 +211,7 @@ function Descriptors({ scale, bands }) {
 /* ── The card ──────────────────────────────────────────────────────────── */
 
 export default function ReportCardView({ card, student, headerRight }) {
+  const compact = useMediaQuery((t) => t.breakpoints.down('sm'));
   const { logoUrl } = useBranding();
   const school = card?.school;
   const period = ['Academic Report Form', student.class_name, `Term ${card.term}`, `(${card.academic_year})`]
@@ -233,7 +234,7 @@ export default function ReportCardView({ card, student, headerRight }) {
         </Box>
 
         <Box sx={{ p: 2 }}>
-          <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap', gap: 2, alignItems: 'flex-start' }}>
+          <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap" sx={{ alignItems: 'flex-start' }}>
             <LearnerPhoto student={student} size={96} />
             <Box sx={{ minWidth: 180 }}>
               <Typography sx={{ fontWeight: 600, fontSize: 15 }}>
@@ -260,6 +261,33 @@ export default function ReportCardView({ card, student, headerRight }) {
 
           <Box sx={{ mt: 2 }}><Tiles student={student} /></Box>
 
+          {/* On a phone the subjects are a list — area, mark and grade on one
+              line, the comment and teacher beneath — because a six-column table
+              leaves the grade and comment off-screen where nobody scrolls to. */}
+          {compact ? (
+            <Stack sx={{ mt: 2 }} divider={<Divider flexItem />}>
+              {student.marks.map((m) => (
+                <Box key={m.id} sx={{ py: 1.25 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14, flex: 1, minWidth: 0 }}>{m.learning_area}</Typography>
+                    <Typography sx={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                      {m.percentage != null ? `${m.percentage.toFixed(0)}%` : '—'}
+                    </Typography>
+                    <Dev value={m.dev} />
+                    <GradeStamp grade={m.grade} size={30} />
+                  </Box>
+                  {(m.remarks || m.teacher) && (
+                    <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: 0.25 }}>
+                      {[m.remarks, m.teacher].filter(Boolean).join(' · ')}
+                    </Typography>
+                  )}
+                </Box>
+              ))}
+              {!student.marks.length && (
+                <Typography color="text.secondary" sx={{ py: 1 }}>No marks recorded for this period.</Typography>
+              )}
+            </Stack>
+          ) : (
           <Box sx={{ mt: 2, overflowX: 'auto' }}>
             <Table size="small" sx={{ minWidth: 640 }}>
               <TableHead>
@@ -293,9 +321,10 @@ export default function ReportCardView({ card, student, headerRight }) {
               </TableBody>
             </Table>
           </Box>
+          )}
 
           {student.group_averages?.length > 0 && (
-            <Stack direction="row" spacing={1.25} sx={{ mt: 2, flexWrap: 'wrap', gap: 1.25 }}>
+            <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap" sx={{ mt: 2, }}>
               {student.group_averages.map((g) => (
                 <Tile key={g.group} label={g.group}
                   value={g.average != null ? g.average.toFixed(1) : '—'} accent="report.petrol" />
@@ -305,7 +334,7 @@ export default function ReportCardView({ card, student, headerRight }) {
 
           <Divider sx={{ my: 2 }} />
 
-          <Stack direction="row" spacing={3} sx={{ flexWrap: 'wrap', gap: 3 }}>
+          <Stack direction="row" spacing={3} useFlexGap flexWrap="wrap">
             <Remark title="Class Teacher Remarks" staff={student.class_teacher}
               text={student.comments?.class_teacher_comment} />
             <Remark title="Principal Remarks" staff={student.headteacher}

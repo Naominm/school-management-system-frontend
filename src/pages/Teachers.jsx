@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Box, Paper, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Chip, Alert, TableContainer, IconButton } from '@mui/material';
+import { Box, Paper, Typography, Button, Table, TableHead, TableRow, TableCell, TableBody, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Chip, Alert, TableContainer, IconButton, Stack, useMediaQuery } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import LinkIcon from '@mui/icons-material/AddLink';
 import DrawIcon from '@mui/icons-material/Draw';
@@ -13,6 +13,7 @@ const TYPES = ['subject_teacher', 'class_teacher', 'both', 'general'];
 export default function Teachers() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const compact = useMediaQuery((t) => t.breakpoints.down('sm'));
   const [rows, setRows] = useState([]);
   const [classes, setClasses] = useState([]);
   const [areas, setAreas] = useState([]);
@@ -52,7 +53,7 @@ export default function Teachers() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5">Teachers</Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           <Button variant="outlined" onClick={() => exportCsv('teachers', [
             { key: 'full_name', label: 'Name' }, { key: 'email', label: 'Email' },
             { key: 'employee_number', label: 'Employee No' }, { key: 'teacher_type', label: 'Type' },
@@ -66,6 +67,36 @@ export default function Teachers() {
         </Box>
       </Box>
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
+      {/* On a phone each teacher is a card with its actions underneath —
+          in the table they sat off the right edge, out of reach. */}
+      {compact ? (
+        <Stack spacing={1}>
+          {rows.map((t) => (
+            <Paper key={t.id} sx={{ p: 1.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography sx={{ fontWeight: 600, fontSize: 14.5 }}>{t.full_name}</Typography>
+                  <Typography sx={{ fontSize: 12.5, color: 'text.secondary', overflowWrap: 'anywhere' }}>{t.email}</Typography>
+                </Box>
+                <Chip size="small" label={t.active ? 'Active' : 'Inactive'} color={t.active ? 'success' : 'default'} />
+              </Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 1, alignItems: 'center' }}>
+                <Chip size="small" variant="outlined" label={(t.teacher_type || 'general').replaceAll('_', ' ')} />
+                {t.employee_number && <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>No. {t.employee_number}</Typography>}
+                {t.specialization && <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>· {t.specialization}</Typography>}
+              </Box>
+              {isAdmin && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+                  <Button size="small" startIcon={<LinkIcon />} onClick={() => setAssigning({ teacher: t, kind: 'class' })}>Class</Button>
+                  <Button size="small" startIcon={<LinkIcon />} onClick={() => setAssigning({ teacher: t, kind: 'subject' })}>Subject</Button>
+                  <Button size="small" startIcon={<DrawIcon />} onClick={() => setSigning(t)}>Signature</Button>
+                </Box>
+              )}
+            </Paper>
+          ))}
+          {!rows.length && <Paper sx={{ p: 3 }}><Typography color="text.secondary" sx={{ textAlign: 'center' }}>No teachers yet.</Typography></Paper>}
+        </Stack>
+      ) : (
       <TableContainer component={Paper}>
         <Table size="small">
           <TableHead>
@@ -78,19 +109,19 @@ export default function Teachers() {
           <TableBody>
             {rows.map((t) => (
               <TableRow key={t.id} hover>
-                <TableCell>{t.full_name}</TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>{t.full_name}</TableCell>
                 <TableCell>{t.email}</TableCell>
                 <TableCell>{t.employee_number || '—'}</TableCell>
                 <TableCell><Chip size="small" label={(t.teacher_type || 'general').replaceAll('_', ' ')} /></TableCell>
                 <TableCell>{t.specialization || '—'}</TableCell>
                 <TableCell><Chip size="small" label={t.active ? 'Active' : 'Inactive'} color={t.active ? 'success' : 'default'} /></TableCell>
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                <TableCell align="right">
                   {isAdmin && (
-                    <>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', columnGap: 0.5 }}>
                       <Button size="small" startIcon={<LinkIcon />} onClick={() => setAssigning({ teacher: t, kind: 'class' })}>Class</Button>
                       <Button size="small" startIcon={<LinkIcon />} onClick={() => setAssigning({ teacher: t, kind: 'subject' })}>Subject</Button>
                       <Button size="small" startIcon={<DrawIcon />} onClick={() => setSigning(t)}>Signature</Button>
-                    </>
+                    </Box>
                   )}
                 </TableCell>
               </TableRow>
@@ -99,6 +130,7 @@ export default function Teachers() {
           </TableBody>
         </Table>
       </TableContainer>
+      )}
 
       <SignatureDialog teacher={signing} onClose={() => setSigning(null)} />
 

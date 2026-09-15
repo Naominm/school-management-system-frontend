@@ -41,7 +41,7 @@ export default function Messages() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5">Messages</Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => setComposing({ recipient_id: '', subject: '', body: '' })}>
           Compose

@@ -64,7 +64,8 @@ export default function BrandingEditor({ school, onSaved, compact }) {
     <Box>
       {error && <Alert severity="error" sx={{ mb: 1.5 }} onClose={() => setError('')}>{error}</Alert>}
       {ok && <Alert severity="success" sx={{ mb: 1.5 }} onClose={() => setOk('')}>{ok}</Alert>}
-      <Stack direction={compact ? 'column' : 'row'} spacing={2} alignItems={compact ? 'stretch' : 'center'}>
+      <Stack direction={compact ? 'column' : { xs: 'column', sm: 'row' }} spacing={2}
+        alignItems={compact ? 'stretch' : { xs: 'flex-start', sm: 'center' }}>
         <Box sx={{ width: 88, height: 88, flexShrink: 0, borderRadius: '12px',
                    border: '1px dashed', borderColor: 'divider', display: 'flex',
                    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
@@ -76,7 +77,7 @@ export default function BrandingEditor({ school, onSaved, compact }) {
               </Typography>}
         </Box>
         <Stack spacing={1.5} sx={{ flex: 1, minWidth: 0 }}>
-          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Button size="small" component="label" disabled={busy}>
               {shown ? 'Replace logo' : 'Upload logo'}
               <input ref={inputRef} hidden type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
@@ -93,14 +94,14 @@ export default function BrandingEditor({ school, onSaved, compact }) {
           </Typography>
           {/* Printed on every report card: the contact block under the crest,
               and the motto along the footer band. */}
-          <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap', gap: 1.5 }}>
+          <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap">
             {[['address', 'Address'], ['phone', 'Telephone'], ['email', 'Email'], ['motto', 'School motto']]
               .map(([key, label]) => (
                 <TextField key={key} size="small" label={label} value={text[key]} sx={{ flex: 1, minWidth: 180 }}
                   onChange={(e) => setText((t) => ({ ...t, [key]: e.target.value }))} />
               ))}
           </Stack>
-          <Stack direction="row" spacing={1.5} alignItems="center">
+          <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap" alignItems="center">
             <TextField size="small" label="Crest colour" value={colour} sx={{ width: 160 }}
               onChange={(e) => setColour(e.target.value)} placeholder="#2BAADE" />
             <input type="color" aria-label="Pick crest colour"

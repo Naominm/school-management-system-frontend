@@ -164,7 +164,7 @@ export default function AppLayout() {
         {drawer}
       </Drawer>
 
-      <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 3 }, mt: { xs: 7, md: 0 }, minWidth: 0 }}>
+      <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 3 }, mt: { xs: 7, sm: 8, md: 0 }, minWidth: 0 }}>
         {!gated ? <Outlet />
           : !loaded ? <LinearProgress />
             : enabled(gated) ? <Outlet />

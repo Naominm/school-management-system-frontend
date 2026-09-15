@@ -77,9 +77,9 @@ export default function ReportCardSetup() {
               {scale.map((g) => (
                 <TableRow key={g.id ?? g.grade}>
                   <TableCell sx={{ fontWeight: 600 }}>{g.grade}</TableCell>
-                  <TableCell align="center">{rangeLabel(g.min_percentage, g.max_percentage)}%</TableCell>
+                  <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>{rangeLabel(g.min_percentage, g.max_percentage)}%</TableCell>
                   <TableCell align="center">{g.points || '—'}</TableCell>
-                  <TableCell sx={{ color: 'text.secondary' }}>{g.remark || '—'}</TableCell>
+                  <TableCell sx={{ color: 'text.secondary', minWidth: 140 }}>{g.remark || '—'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -87,7 +87,7 @@ export default function ReportCardSetup() {
         </Box>
       )}
 
-      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
         {presets.map((p) => (
           <Button key={p.key} variant="outlined" disabled={busy === p.key}
             onClick={() => run(p.key,
@@ -114,7 +114,7 @@ export default function ReportCardSetup() {
         simply left out of that row.
       </Typography>
 
-      <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', gap: 0.75, mb: 1.5 }}>
+      <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap" sx={{ mb: 1.5 }}>
         {areas.map((a) => (
           <Chip key={a.id} size="small" label={a.subject_group ? `${a.name} · ${a.subject_group}` : a.name}
             color={a.subject_group ? 'primary' : 'default'}

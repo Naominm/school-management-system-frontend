@@ -57,7 +57,7 @@ export default function Fees() {
                 </TableCell>
               </TableRow>
             ))}
-            {!fees.length && <TableRow><TableCell colSpan={8}><Typography color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>No fee records — create them under the Fees resource via the API or admin tools.</Typography></TableCell></TableRow>}
+            {!fees.length && <TableRow><TableCell colSpan={8}><Typography color="text.secondary" sx={{ py: 2, textAlign: 'center', position: 'sticky', left: 0, maxWidth: { xs: 'calc(100vw - 64px)', md: 'none' } }}>No fee records — create them under the Fees resource via the API or admin tools.</Typography></TableCell></TableRow>}
           </TableBody>
         </Table>
       </TableContainer>

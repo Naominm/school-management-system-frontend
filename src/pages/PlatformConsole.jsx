@@ -193,7 +193,7 @@ export default function PlatformConsole() {
             value={newSchool.motto} onChange={(e) => setNewSchool({ ...newSchool, motto: e.target.value })} />
           <TextField size="small" label="Crest colour" sx={{ width: 140 }}
             value={newSchool.crest_colour} onChange={(e) => setNewSchool({ ...newSchool, crest_colour: e.target.value })} />
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
             <Box sx={{ width: 44, height: 44, borderRadius: '10px', flexShrink: 0, overflow: 'hidden',
                        border: '1px dashed', borderColor: 'divider',
                        display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -247,7 +247,7 @@ export default function PlatformConsole() {
               </Box>
 
               <Divider />
-              <Stack direction="row" spacing={2} justifyContent="space-around" sx={{ py: 0.5 }}>
+              <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap" justifyContent="space-around" sx={{ py: 0.5 }}>
                 {[['Students', s.stats.students], ['Teachers', s.stats.teachers],
                   ['Classes', s.stats.classes], ['Marks', s.stats.marks_this_period]].map(([label, n]) => (
                   <Box key={label} sx={{ textAlign: 'center' }}>
@@ -273,7 +273,7 @@ export default function PlatformConsole() {
                 </Typography>
               )}
 
-              <Stack direction="row" spacing={1} sx={{ mt: 'auto', flexWrap: 'wrap', gap: 1 }}>
+              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 'auto', }}>
                 {s.locked
                   ? <Button size="small" color="success" startIcon={<LockOpenIcon />} onClick={() => unlock(s)}>Unlock</Button>
                   : <Button size="small" color="error" startIcon={<LockIcon />} onClick={() => { setLockFor(s); setLockReason(''); }}>Lock</Button>}
@@ -391,7 +391,7 @@ export default function PlatformConsole() {
                 helperText="Shown on the sign-in picker and on school cards" />
               <TextField size="small" label="Motto" value={editForm.motto}
                 onChange={(e) => setEditForm({ ...editForm, motto: e.target.value })} />
-              <Stack direction="row" spacing={2} alignItems="center">
+              <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap" alignItems="center">
                 <TextField size="small" label="Crest colour" sx={{ flex: 1 }} value={editForm.crest_colour}
                   onChange={(e) => setEditForm({ ...editForm, crest_colour: e.target.value })}
                   helperText="Hex, e.g. #C9A227" />
@@ -424,7 +424,7 @@ export default function PlatformConsole() {
           {impact ? (
             <>
               <Typography variant="subtitle2" gutterBottom>This will delete:</Typography>
-              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, mb: 2 }}>
+              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 2 }}>
                 {[['students', impact.students], ['staff & parent accounts', impact.users],
                   ['classes', impact.classes], ['marks', impact.marks],
                   ['attendance records', impact.attendance], ['fee records', impact.fees]]

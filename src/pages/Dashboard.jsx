@@ -55,7 +55,7 @@ export default function Dashboard() {
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>Fees</Typography>
-                <Stack direction="row" spacing={4}>
+                <Stack direction="row" spacing={4} useFlexGap flexWrap="wrap">
                   <Box>
                     <Typography variant="overline" color="text.secondary">Billed</Typography>
                     <Typography variant="h5" fontWeight={700}>{Number(data.fees.billed).toLocaleString()}</Typography>

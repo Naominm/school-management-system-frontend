@@ -248,7 +248,7 @@ export default function Markbook() {
       <Paper sx={{ p: 2, mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
         <TextField
           select size="small" label="Class" value={classId}
-          onChange={(e) => setClassId(e.target.value)} sx={{ minWidth: 200 }}
+          onChange={(e) => setClassId(e.target.value)} sx={{ minWidth: { xs: '100%', sm: 200 } }}
           disabled={!classes.length}
         >
           {classes.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
@@ -256,7 +256,7 @@ export default function Markbook() {
 
         <TextField
           select size="small" label="Subject" value={subjectId}
-          onChange={(e) => setSubjectId(e.target.value)} sx={{ minWidth: 200 }}
+          onChange={(e) => setSubjectId(e.target.value)} sx={{ minWidth: { xs: '100%', sm: 200 } }}
           disabled={!subjectOptions.length}
         >
           <MenuItem value={ALL_SUBJECTS}>All my subjects</MenuItem>
@@ -268,15 +268,15 @@ export default function Markbook() {
         </TextField>
 
         <TextField size="small" label="Term" type="number" value={term}
-          onChange={(e) => setTerm(Number(e.target.value))} sx={{ width: 100 }} />
+          onChange={(e) => setTerm(Number(e.target.value))} sx={{ width: { xs: 'calc(50% - 8px)', sm: 100 } }} />
         <TextField size="small" label="Year" type="number" value={year}
-          onChange={(e) => setYear(Number(e.target.value))} sx={{ width: 120 }} />
+          onChange={(e) => setYear(Number(e.target.value))} sx={{ width: { xs: 'calc(50% - 8px)', sm: 120 } }} />
         <Button variant="contained" onClick={load} disabled={!classId || busy}>Load</Button>
       </Paper>
 
       {grid && !busy && (
         <Paper sx={{ p: 1.5, mb: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap',
-                     position: 'sticky', top: 0, zIndex: 3 }}>
+                     position: 'sticky', top: { xs: 56, sm: 64, md: 0 }, zIndex: 3 }}>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
             {invalid.length
               ? `${invalid.length} mark${invalid.length === 1 ? '' : 's'} outside 0–100`
@@ -335,7 +335,9 @@ export default function Markbook() {
           <Table size="small" stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700 }}>Learner</TableCell>
+                {/* The learner column stays in view while the subjects scroll
+                    across — on a phone most of the grid is off to the right. */}
+                <TableCell sx={{ fontWeight: 700, position: 'sticky', left: 0, zIndex: 3, bgcolor: 'background.paper' }}>Learner</TableCell>
                 {columns.map((la) => (
                   <TableCell key={la.id} sx={{ fontWeight: 700 }}>
                     {la.name}{la.can_edit === false ? ' (view only)' : ''}
@@ -346,7 +348,9 @@ export default function Markbook() {
             <TableBody>
               {grid.students.map((s) => (
                 <TableRow key={s.id} hover>
-                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                  <TableCell sx={{ whiteSpace: 'nowrap', position: 'sticky', left: 0, zIndex: 1, bgcolor: 'background.paper',
+                                   boxShadow: '1px 0 0 rgba(0,0,0,0.08)', maxWidth: { xs: 150, sm: 'none' },
+                                   overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {s.last_name} {s.first_name}
                     <Box component="span" sx={{ ml: 1, fontFamily: (t) => t.typography.mono.fontFamily, color: 'text.secondary', fontSize: 12 }}>
                       {s.admission_number}

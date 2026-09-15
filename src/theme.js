@@ -81,8 +81,8 @@ export function buildTheme() {
       fontFamily: '"Poppins", system-ui, -apple-system, "Segoe UI", sans-serif',
       /* numerals, admission numbers and marks */
       mono: { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' },
-      h4: { fontWeight: 600, letterSpacing: '-0.01em' },
-      h5: { fontWeight: 600, letterSpacing: '-0.01em' },
+      h4: { fontWeight: 600, letterSpacing: '-0.01em', fontSize: 'clamp(1.35rem, 5.5vw, 2.125rem)' },
+      h5: { fontWeight: 600, letterSpacing: '-0.01em', fontSize: 'clamp(1.15rem, 4.2vw, 1.5rem)' },
       h6: { fontWeight: 600 },
       subtitle1: { fontWeight: 600 },
       subtitle2: { fontWeight: 600 },
@@ -125,6 +125,28 @@ export function buildTheme() {
           root: { '&:nth-of-type(odd) td': { backgroundColor: mist } },
         },
       },
+      /* On a phone a dialog is the screen: nearly edge to edge, scrollable,
+       * rather than a small box with wasted margins around it. */
+      MuiDialog: {
+        defaultProps: { fullWidth: true },
+        styleOverrides: {
+          paper: {
+            '@media (max-width:599.95px)': {
+              margin: 8,
+              width: 'calc(100% - 16px)',
+              maxWidth: 'calc(100% - 16px)',
+              maxHeight: 'calc(100% - 16px)',
+            },
+          },
+        },
+      },
+      /* A table wider than the phone scrolls inside its own container instead
+       * of stretching the page sideways. */
+      MuiTableContainer: { styleOverrides: { root: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } } },
+      MuiDialogContent: { styleOverrides: { root: { '@media (max-width:599.95px)': { padding: 16 } } } },
+      MuiDialogActions: { styleOverrides: { root: { '@media (max-width:599.95px)': { padding: 12, flexWrap: 'wrap' } } } },
+      MuiTabs: { styleOverrides: { root: { maxWidth: '100%' } }, defaultProps: { variant: 'scrollable', allowScrollButtonsMobile: true, scrollButtons: 'auto' } },
+      MuiToggleButtonGroup: { styleOverrides: { root: { flexWrap: 'wrap' } } },
       MuiChip: { styleOverrides: { root: { fontWeight: 500, borderRadius: 6 } } },
       MuiAlert: { styleOverrides: { root: { border: `1px solid ${cloud}`, borderRadius: 10 } } },
       MuiOutlinedInput: { styleOverrides: { root: { borderRadius: 8, backgroundColor: '#FFFFFF' } } },

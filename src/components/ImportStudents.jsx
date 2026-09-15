@@ -138,7 +138,8 @@ export default function ImportStudents({ onImported }) {
             </Alert>
           )}
           {!!photoResult?.errors?.length && (
-            <Table size="small" sx={{ mt: 2 }}>
+            <Box sx={{ overflowX: 'auto', mt: 2 }}>
+            <Table size="small">
               <TableHead><TableRow><TableCell>File</TableCell><TableCell>Reason</TableCell></TableRow></TableHead>
               <TableBody>
                 {photoResult.errors.map((x, i) => (
@@ -146,6 +147,7 @@ export default function ImportStudents({ onImported }) {
                 ))}
               </TableBody>
             </Table>
+            </Box>
           )}
         </DialogContent>
         <DialogActions><Button onClick={() => setPhotoResult(null)}>Close</Button></DialogActions>
@@ -168,6 +170,7 @@ export default function ImportStudents({ onImported }) {
             {!!result?.errors?.length && <Chip color="error" label={`${result.errors.length} error(s)`} />}
           </Box>
           {!!result?.errors?.length && (
+            <Box sx={{ overflowX: 'auto' }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -184,6 +187,7 @@ export default function ImportStudents({ onImported }) {
                 ))}
               </TableBody>
             </Table>
+            </Box>
           )}
         </DialogContent>
         <DialogActions><Button variant="contained" onClick={() => setResult(null)}>Done</Button></DialogActions>

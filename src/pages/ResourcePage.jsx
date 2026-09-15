@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import {
   Box, Paper, Typography, Button, Table, TableHead, TableRow, TableCell,
   TableBody, IconButton, Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, MenuItem, LinearProgress, Alert, Chip, TableContainer,
+  TextField, MenuItem, LinearProgress, Alert, Chip, TableContainer, Stack, useMediaQuery,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -25,6 +25,7 @@ export default function ResourcePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(null); // null | {} | row
+  const compact = useMediaQuery((t) => t.breakpoints.down('sm'));
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -91,7 +92,7 @@ export default function ResourcePage() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, gap: 2, flexWrap: 'wrap' }}>
         <Typography variant="h5">{cfg.label}</Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           {cfg.key === 'students' && <ImportStudents onImported={load} />}
           <Button variant="outlined" disabled={!rows.length}
             onClick={() => exportCsv(cfg.key, cfg.columns.map((c) => ({ key: c, label: c.replaceAll('_', ' ') })), rows)}>
@@ -104,7 +105,47 @@ export default function ResourcePage() {
       </Box>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {loading ? <LinearProgress /> : (
+      {loading ? <LinearProgress /> : compact ? (
+        /* On a phone each record is a card: the first few columns as label and
+           value, edit and delete to hand — rather than a table squeezed to its
+           first three columns with the rest off-screen. */
+        <Stack spacing={1}>
+          {rows.map((row) => {
+            const photo = cfg.columns.includes('photo_updated_at');
+            const shown = cfg.columns.filter((c) => c !== 'photo_updated_at');
+            const [title, ...rest] = shown;
+            return (
+              <Paper key={row.id ?? row.key} sx={{ p: 1.5, display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
+                {photo && <LearnerPhoto student={row} size={44} />}
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography sx={{ fontWeight: 600, fontSize: 14.5, overflowWrap: 'anywhere' }}>
+                    {cfg.key === 'students'
+                      ? `${row.first_name || ''} ${row.last_name || ''}`.trim() || renderCell(row, title)
+                      : renderCell(row, title)}
+                  </Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: 1, rowGap: 0.25, mt: 0.5 }}>
+                    {rest.filter((c) => !(cfg.key === 'students' && ['first_name', 'last_name'].includes(c))).slice(0, 4).map((c) => (
+                      <Box key={c} sx={{ display: 'contents' }}>
+                        <Typography sx={{ fontSize: 12, color: 'text.secondary', textTransform: 'capitalize', whiteSpace: 'nowrap' }}>
+                          {c.replaceAll('_', ' ').replace(' id', '')}
+                        </Typography>
+                        <Typography component="div" sx={{ fontSize: 12.5, overflowWrap: 'anywhere' }}>{renderCell(row, c)}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  <IconButton aria-label="Edit" onClick={() => setEditing(row)}><EditIcon fontSize="small" /></IconButton>
+                  <IconButton aria-label="Delete" color="error" onClick={() => remove(row.id)}><DeleteIcon fontSize="small" /></IconButton>
+                </Box>
+              </Paper>
+            );
+          })}
+          {!rows.length && (
+            <Paper sx={{ p: 3 }}><Typography color="text.secondary" sx={{ textAlign: 'center' }}>No records yet.</Typography></Paper>
+          )}
+        </Stack>
+      ) : (
         <TableContainer component={Paper}>
           <Table size="small">
             <TableHead>

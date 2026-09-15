@@ -67,7 +67,7 @@ export default function PhotoUpload({ student, onChange, size = 96 }) {
 
   return (
     <Box>
-      <Stack direction="row" spacing={2} alignItems="center">
+      <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap" alignItems="center">
         <Box sx={{
           width: size, height: size, flexShrink: 0, borderRadius: 1, overflow: 'hidden',
           border: '1px solid', borderColor: 'divider', bgcolor: 'report.mist',
@@ -78,7 +78,7 @@ export default function PhotoUpload({ student, onChange, size = 96 }) {
             : <Typography sx={{ fontSize: size * 0.3, fontWeight: 600, color: 'primary.main' }}>{initials || '—'}</Typography>}
         </Box>
         <Box>
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Button size="small" variant="outlined" disabled={busy} onClick={() => fileRef.current?.click()}>
               {has ? 'Replace photo' : 'Add photo'}
             </Button>

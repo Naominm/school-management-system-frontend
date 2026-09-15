@@ -35,7 +35,7 @@ export default function Attendance() {
     <Box>
       <Typography variant="h5" gutterBottom>Attendance</Typography>
       <Paper sx={{ p: 2, mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-        <TextField select size="small" label="Class" value={classId} onChange={(e) => setClassId(e.target.value)} sx={{ minWidth: 180 }}>
+        <TextField select size="small" label="Class" value={classId} onChange={(e) => setClassId(e.target.value)} sx={{ minWidth: { xs: '100%', sm: 180 } }}>
           {classes.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
         </TextField>
         <TextField size="small" type="date" label="Date" value={date} onChange={(e) => setDate(e.target.value)} InputLabelProps={{ shrink: true }} />

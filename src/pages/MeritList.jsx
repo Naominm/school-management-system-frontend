@@ -54,11 +54,11 @@ export default function MeritList() {
     <Box>
       <SchoolHeader title="Merit list" />
       <Paper sx={{ p: 2, mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-        <TextField select size="small" label="Class" value={classId} onChange={(e) => setClassId(e.target.value)} sx={{ minWidth: 180 }}>
+        <TextField select size="small" label="Class" value={classId} onChange={(e) => setClassId(e.target.value)} sx={{ minWidth: { xs: '100%', sm: 180 } }}>
           {classes.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
         </TextField>
-        <TextField size="small" label="Term" type="number" value={term} onChange={(e) => setTerm(Number(e.target.value))} sx={{ width: 100 }} />
-        <TextField size="small" label="Year" type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} sx={{ width: 120 }} />
+        <TextField size="small" label="Term" type="number" value={term} onChange={(e) => setTerm(Number(e.target.value))} sx={{ width: { xs: 'calc(50% - 8px)', sm: 100 } }} />
+        <TextField size="small" label="Year" type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} sx={{ width: { xs: 'calc(50% - 8px)', sm: 120 } }} />
         <Button variant="contained" onClick={load} disabled={!classId}>Load</Button>
         <Button variant="outlined" disabled={!data?.merit_list?.length}
           onClick={() => exportCsv(`merit-list-term${term}-${year}`,
@@ -106,7 +106,7 @@ export default function MeritList() {
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Learner</TableCell>
+                  <TableCell sx={{ fontWeight: 700, position: 'sticky', left: 0, zIndex: 3, bgcolor: 'background.paper' }}>Learner</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Adm. No.</TableCell>
                   {areas.map((a) => (
                     <TableCell key={a.id} align="center" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
@@ -121,13 +121,13 @@ export default function MeritList() {
                 {data.merit_list.map((r) => (
                   <TableRow key={r.student_id} hover>
                     <TableCell>{r.position}</TableCell>
-                    <TableCell>
+                    <TableCell sx={{ position: 'sticky', left: 0, zIndex: 1, bgcolor: 'background.paper' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <LearnerPhoto student={{ ...r, id: r.student_id }} size={28} rounded />
-                        <span>{r.last_name} {r.first_name}</span>
+                        <Box component="span" sx={{ whiteSpace: 'nowrap' }}>{r.last_name} {r.first_name}</Box>
                       </Box>
                     </TableCell>
-                    <TableCell>{r.admission_number || '—'}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{r.admission_number || '—'}</TableCell>
                     {areas.map((a) => {
                       const m = r.marks?.[a.id];
                       return (

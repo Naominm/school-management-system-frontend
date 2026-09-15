@@ -149,14 +149,14 @@ export default function ReportCard() {
       <Paper sx={{ p: 2, mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
         {staff && (
           <TextField select size="small" label="Learner" value={studentId}
-            onChange={(e) => setStudentId(e.target.value)} sx={{ minWidth: 220 }}>
+            onChange={(e) => setStudentId(e.target.value)} sx={{ minWidth: { xs: '100%', sm: 220 } }}>
             {students.map((s) => <MenuItem key={s.id} value={s.id}>{s.last_name} {s.first_name}</MenuItem>)}
           </TextField>
         )}
         <TextField size="small" label="Term" type="number" value={term}
-          onChange={(e) => setTerm(Number(e.target.value))} sx={{ width: 100 }} />
+          onChange={(e) => setTerm(Number(e.target.value))} sx={{ width: { xs: 'calc(50% - 8px)', sm: 100 } }} />
         <TextField size="small" label="Year" type="number" value={year}
-          onChange={(e) => setYear(Number(e.target.value))} sx={{ width: 120 }} />
+          onChange={(e) => setYear(Number(e.target.value))} sx={{ width: { xs: 'calc(50% - 8px)', sm: 120 } }} />
         <Button variant="contained" onClick={() => load()} disabled={staff && !studentId}>Load</Button>
         {card && (
           <Button variant="outlined" onClick={exportOnePdf} disabled={singleBusy}>
@@ -169,7 +169,7 @@ export default function ReportCard() {
         <Paper sx={{ p: 2, mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>Whole class</Typography>
           <TextField select size="small" label="Class" value={classId}
-            onChange={(e) => setClassId(e.target.value)} sx={{ minWidth: 200 }}>
+            onChange={(e) => setClassId(e.target.value)} sx={{ minWidth: { xs: '100%', sm: 200 } }}>
             {classes.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
           </TextField>
           <Button variant="outlined" disabled={!classId || bulkBusy} onClick={exportClassPdf}>
@@ -194,7 +194,7 @@ export default function ReportCard() {
           {staff && (
             <Paper sx={{ p: 2 }}>
               <Typography variant="subtitle2" gutterBottom>Remarks</Typography>
-              <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap', gap: 2 }}>
+              <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap">
                 <TextField label="Class teacher" multiline minRows={3} value={comment}
                   onChange={(e) => setComment(e.target.value)} sx={{ flex: 1, minWidth: 280 }} />
                 <TextField label="Principal" multiline minRows={3} value={headComment}

@@ -40,7 +40,7 @@ export default function ImageField({ label, value, currentUrl, onChange, size = 
       <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75 }}>
         {label}
       </Typography>
-      <Stack direction="row" spacing={2} alignItems="center">
+      <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap" alignItems="center">
         <Box sx={{
           width: size, height: size, flexShrink: 0, borderRadius: 1, overflow: 'hidden',
           border: '1px dashed', borderColor: 'divider', bgcolor: 'report.mist',
@@ -51,7 +51,7 @@ export default function ImageField({ label, value, currentUrl, onChange, size = 
             : <Typography variant="caption" color="text.secondary">None</Typography>}
         </Box>
         <Stack spacing={0.75} alignItems="flex-start">
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Button size="small" variant="outlined" onClick={() => fileRef.current?.click()}>
               {shown ? 'Replace' : 'Choose image'}
             </Button>

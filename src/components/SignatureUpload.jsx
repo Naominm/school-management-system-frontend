@@ -53,7 +53,7 @@ export default function SignatureUpload({ teacher, onChange }) {
 
   return (
     <Box>
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ flexWrap: 'wrap', gap: 2 }}>
+      <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap" alignItems="center">
         <Box sx={{
           width: 160, height: 52, flexShrink: 0, border: '1px dashed', borderColor: 'divider',
           borderRadius: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -63,7 +63,7 @@ export default function SignatureUpload({ teacher, onChange }) {
             ? <Box component="img" src={src} alt="" sx={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
             : <Typography variant="caption" color="text.secondary">No signature</Typography>}
         </Box>
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
           <Button size="small" variant="outlined" disabled={busy} onClick={() => fileRef.current?.click()}>
             {has ? 'Replace' : 'Upload signature'}
           </Button>

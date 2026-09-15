@@ -146,7 +146,7 @@ function LearnerProgress({ student, scale }) {
   if (!periods.length) {
     return (
       <Paper sx={{ p: 3, mb: 2 }}>
-        <Stack direction="row" spacing={2} alignItems="center">
+        <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap" alignItems="center">
           <LearnerPhoto student={student} size={72} />
           <Box>
             <Typography variant="h6">{student.first_name} {student.last_name}</Typography>
@@ -178,7 +178,7 @@ function LearnerProgress({ student, scale }) {
 
   return (
     <Paper sx={{ p: 3, mb: 2 }}>
-      <Stack direction="row" spacing={2} alignItems="center" sx={{ flexWrap: 'wrap', gap: 2 }}>
+      <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap" alignItems="center">
         <LearnerPhoto student={student} size={72} />
         <Box sx={{ flex: 1, minWidth: 200 }}>
           <Typography variant="h6">{student.first_name} {student.last_name}</Typography>
@@ -196,7 +196,7 @@ function LearnerProgress({ student, scale }) {
         </ToggleButtonGroup>
       </Stack>
 
-      <Stack direction="row" spacing={1.25} sx={{ mt: 2, flexWrap: 'wrap', gap: 1.25 }}>
+      <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap" sx={{ mt: 2, }}>
         <Tile label="Average" value={`${period.average.toFixed(1)}%`} accent={bandHex(band?.grade)} />
         {band && <Tile label="Performance level" value={band.grade} accent={bandHex(band.grade)} />}
         <Tile label="Learning areas" value={String(period.marks.length)} />
@@ -204,7 +204,7 @@ function LearnerProgress({ student, scale }) {
         <Tile label="Needs work" value={weakest ? subjectCode(weakest.learning_area) : '—'} accent="warning.main" />
       </Stack>
 
-      <Stack direction="row" spacing={3} sx={{ mt: 2, flexWrap: 'wrap', gap: 3 }}>
+      <Stack direction="row" spacing={3} useFlexGap flexWrap="wrap" sx={{ mt: 2, }}>
         <SubjectChart marks={period.marks} />
         <Box sx={{ flex: 1, minWidth: 220 }}>
           <TrendLine points={[...periods].reverse()} />
@@ -212,7 +212,7 @@ function LearnerProgress({ student, scale }) {
       </Stack>
 
       {groups.size > 0 && (
-        <Stack direction="row" spacing={1.25} sx={{ mt: 2, flexWrap: 'wrap', gap: 1.25 }}>
+        <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap" sx={{ mt: 2, }}>
           {[...groups].map(([name, g]) => (
             <Tile key={name} label={name} value={(g.sum / g.n).toFixed(1)} accent="report.petrol" />
           ))}

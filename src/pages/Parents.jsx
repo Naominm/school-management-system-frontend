@@ -13,7 +13,7 @@ export default function Parents() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5">Parents & guardians</Typography>
         <Button variant="outlined" onClick={() => exportCsv('parents', [
           { key: 'full_name', label: 'Name' }, { key: 'email', label: 'Email' },
@@ -43,7 +43,7 @@ export default function Parents() {
                 <TableCell><Chip size="small" label={p.active ? 'Active' : 'Inactive'} color={p.active ? 'success' : 'default'} /></TableCell>
               </TableRow>
             ))}
-            {!rows.length && <TableRow><TableCell colSpan={4}><Typography color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>No parent accounts yet — parents register from the sign-in page.</Typography></TableCell></TableRow>}
+            {!rows.length && <TableRow><TableCell colSpan={4}><Typography color="text.secondary" sx={{ py: 2, textAlign: 'center', position: 'sticky', left: 0, maxWidth: { xs: 'calc(100vw - 64px)', md: 'none' } }}>No parent accounts yet — parents register from the sign-in page.</Typography></TableCell></TableRow>}
           </TableBody>
         </Table>
       </TableContainer>
