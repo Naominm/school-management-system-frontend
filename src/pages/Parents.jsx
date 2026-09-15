@@ -16,6 +16,7 @@ import { exportCsv } from '../exportCsv';
 import { usePrintBrand } from '../branding';
 import { activationSlipsPdf } from '../activationSlips';
 import SchoolHeader from '../components/SchoolHeader';
+import ImportParents from '../components/ImportParents';
 
 /**
  * Parents and guardians, from the school's side.
@@ -157,6 +158,8 @@ function EditDialog({ parent, onClose, onDone }) {
 export default function Parents() {
   const { user } = useAuth();
   const manage = user?.role === 'admin' || /head|deputy/i.test(`${user?.position || ''} ${user?.role || ''}`);
+  // Class teachers may link parents as well as administrators.
+  const mayLink = manage || user?.role === 'teacher';
   const compact = useMediaQuery((t) => t.breakpoints.down('sm'));
   const printBrand = usePrintBrand();
 
@@ -278,6 +281,8 @@ export default function Parents() {
       <SchoolHeader
         title="Parents & guardians"
         right={(
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+          {mayLink && <ImportParents onImported={load} />}
           <Button variant="outlined" disabled={!data?.parents.length}
             onClick={() => exportCsv('parents', [
               { key: 'full_name', label: 'Name' }, { key: 'phone', label: 'Phone' }, { key: 'email', label: 'Email' },
@@ -287,6 +292,7 @@ export default function Parents() {
             })))}>
             Export CSV
           </Button>
+          </Stack>
         )}
       />
 
@@ -309,8 +315,8 @@ export default function Parents() {
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography variant="subtitle2">Getting every learner a parent</Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Parents cannot sign up themselves. Link them here or through the learner import, then send each a
-                  code by text and email, or print slips to send home.
+                  Parents cannot sign up themselves. Link them here, import them from a CSV, or through the learner
+                  import — then send each a code by text and email, or print slips to send home.
                 </Typography>
               </Box>
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
