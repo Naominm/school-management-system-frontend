@@ -44,8 +44,11 @@ function segmentsFor(text) {
  * the school.
  */
 
+/* "sent" means the gateway accepted it; "delivered" arrives later, when the
+ * network confirms it reached the phone. */
 const STATUS = {
-  sent: { label: 'Sent', colour: 'success' },
+  delivered: { label: 'Delivered', colour: 'success' },
+  sent: { label: 'Sent', colour: 'info' },
   not_sent: { label: 'Not sent', colour: 'warning' },
   failed: { label: 'Failed', colour: 'error' },
 };
@@ -120,6 +123,14 @@ export default function Notify() {
               Set <code>SMTP_HOST</code>, <code>SMTP_USER</code> and <code>SMTP_PASS</code> to send them.
             </>
           )}
+        </Alert>
+      )}
+
+      {audiences?.sms_sandbox && channel === 'sms' && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          SMS is in <strong>sandbox mode</strong>. Messages go to the Africa&apos;s Talking simulator,
+          not to real phones — open the simulator and launch a phone with one of the recipients&apos;
+          numbers to see them arrive.
         </Alert>
       )}
 
