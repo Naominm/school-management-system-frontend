@@ -37,7 +37,8 @@ export default function ReportCard() {
     api.get('/classes').then((r) => setClasses(r.data)).catch(() => {});
   }, [staff]);
 
-  async function load(id = studentId) {
+  /* A parent's session is for one learner; staff pick from the list. */
+  async function load(id = staff ? studentId : user?.student_id) {
     setError('');
     setNotice('');
     try {

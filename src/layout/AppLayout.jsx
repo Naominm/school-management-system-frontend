@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Outlet, NavLink, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar, Toolbar, LinearProgress, Typography, Drawer, List, ListItemButton, ListItemIcon,
-  ListItemText, Box, IconButton, Divider, Avatar, Tooltip, useMediaQuery,
+  ListItemText, Box, IconButton, Divider, Avatar, Tooltip, Button, useMediaQuery,
 } from '@mui/material';
+import SwapIcon from '@mui/icons-material/SwapHoriz';
 import MenuIcon from '@mui/icons-material/Menu';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DashboardIcon from '@mui/icons-material/SpaceDashboard';
@@ -65,7 +66,7 @@ export default function AppLayout() {
     { to: '/fees', label: 'Fees', icon: <PaidIcon fontSize="small" />, roles: ['admin', 'staff'] },
     { to: '/teachers', label: 'Teachers', icon: <GroupsIcon fontSize="small" />, roles: ['admin', 'teacher', 'staff'] },
     { to: '/parents', label: 'Parents', icon: <FamilyIcon fontSize="small" />, roles: ['admin', 'teacher', 'staff'] },
-    { to: '/progress', label: 'My progress', icon: <TimelineIcon fontSize="small" />, roles: ['parent', 'learner'] },
+    { to: '/progress', label: user?.role === 'parent' ? 'Progress' : 'My progress', icon: <TimelineIcon fontSize="small" />, roles: ['parent', 'learner'] },
     { to: '/messages', label: 'Messages', icon: <MailIcon fontSize="small" />, roles: ['admin', 'teacher', 'staff', 'parent', 'learner'] },
     { to: '/notices', label: 'Notices', icon: <CampaignIcon fontSize="small" />, roles: ['admin'] },
     { to: '/branding', label: 'School branding', icon: <PaletteIcon fontSize="small" />, roles: ['admin'] },
@@ -103,6 +104,26 @@ export default function AppLayout() {
         </Box>
       </Toolbar>
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.10)' }} />
+      {/* A parent always sees whose records these are, and can change learner
+          without signing out. */}
+      {user?.guardian_id && user?.learner && (
+        <Box sx={{ px: 2.5, py: 1.5, borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
+          <Typography variant="caption" sx={{ color: 'report.onPetrolFaint', letterSpacing: '0.6px' }}>VIEWING</Typography>
+          <Typography variant="body2" fontWeight={600} noWrap sx={{ color: '#fff' }}>
+            {user.learner.first_name} {user.learner.last_name}
+          </Typography>
+          <Typography variant="caption" noWrap sx={{ color: 'report.onPetrolMuted', display: 'block' }}>
+            {[user.learner.class_name, user.learner.admission_number].filter(Boolean).join(' · ')}
+          </Typography>
+          {user.learner_count > 1 && (
+            <Button size="small" startIcon={<SwapIcon fontSize="small" />}
+              onClick={() => { setOpen(false); navigate('/choose-learner'); }}
+              sx={{ mt: 0.75, ml: -0.75, color: 'report.onPetrol', '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}>
+              Switch learner
+            </Button>
+          )}
+        </Box>
+      )}
       <List dense sx={{ flex: 1, overflowY: 'auto', px: 1 }}>
         {specials.filter((s) => visible(s.roles) && enabled(PAGE_FEATURES[s.to])).map((s) => (
           <ListItemButton

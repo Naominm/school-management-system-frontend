@@ -11,6 +11,7 @@ const TEMPLATE_COLUMNS = [
   { key: 'first_name', label: 'first_name' },
   { key: 'last_name', label: 'last_name' },
   { key: 'class', label: 'class' },
+  { key: 'parent_name', label: 'parent_name' },
   { key: 'parent_email', label: 'parent_email' },
   { key: 'parent_phone', label: 'parent_phone' },
   { key: 'gender', label: 'gender' },
@@ -21,7 +22,7 @@ const TEMPLATE_COLUMNS = [
 ];
 const TEMPLATE_EXAMPLE = [{
   admission_number: 'ADM-100', first_name: 'Wanjiru', last_name: 'Kamau',
-  class: 'Grade 4 Blue', parent_email: 'parent@example.com', parent_phone: '0712345678', gender: 'F',
+  class: 'Grade 4 Blue', parent_name: 'Jane Kamau', parent_email: 'parent@example.com', parent_phone: '0712345678', gender: 'F',
   date_of_birth: '2015-03-14', address: 'Nairobi',
   emergency_contact: 'Jane Kamau', emergency_phone: '0712345678',
 }];
@@ -167,6 +168,7 @@ export default function ImportStudents({ onImported }) {
             <Chip color="success" label={`${result?.created ?? 0} created`} />
             <Chip label={`${result?.skipped ?? 0} skipped (already exist)`} />
             {!!result?.classes_created && <Chip color="primary" label={`${result.classes_created} new class(es)`} />}
+            {!!result?.parents_linked && <Chip color="success" label={`${result.parents_linked} parent(s) linked`} />}
             {!!result?.errors?.length && <Chip color="error" label={`${result.errors.length} error(s)`} />}
           </Box>
           {!!result?.errors?.length && (

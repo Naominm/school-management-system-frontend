@@ -20,6 +20,8 @@ import Attendance from './pages/Attendance';
 import MeritList from './pages/MeritList';
 import ReportCard from './pages/ReportCard';
 import Fees from './pages/Fees';
+import Activate from './pages/Activate';
+import ChooseLearner from './pages/ChooseLearner';
 import Notify from './pages/Notify';
 
 /**
@@ -42,6 +44,8 @@ export default function App() {
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/activate" element={<Activate />} />
+          <Route path="/choose-learner" element={<RequireAuth><ChooseLearner /></RequireAuth>} />
           <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
             <Route path="/" element={<Home />} />
             <Route path="/markbook" element={<Markbook />} />

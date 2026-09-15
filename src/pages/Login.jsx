@@ -5,7 +5,8 @@ import SchoolIcon from '@mui/icons-material/School';
 import { useAuth } from '../auth';
 
 /**
- * Sign in with an email and a password.
+ * Sign in with an email — or, for a parent, the phone number the school
+ * recorded — and a password.
  *
  * There is no school picker: an email is unique across the platform, so it
  * already says which school an account belongs to and which side of the
@@ -86,8 +87,8 @@ export default function Login() {
 
         <form onSubmit={submit}>
           <TextField
-            label="Email" type="email" fullWidth required margin="normal"
-            autoComplete="username" autoFocus
+            label="Email or phone number" fullWidth required margin="normal"
+            autoComplete="username" autoFocus autoCapitalize="none" spellCheck={false}
             value={email} onChange={(e) => setEmail(e.target.value)}
           />
           <TextField
@@ -101,11 +102,23 @@ export default function Login() {
         </form>
 
         <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
-          No account?{' '}
-          <Link component={RouterLink} to="/register" fontWeight={600}>Create one</Link>
-          {' · '}
           <Link component={RouterLink} to="/forgot-password" fontWeight={600}>Forgot password?</Link>
+          {' · '}
+          Learner?{' '}
+          <Link component={RouterLink} to="/register" fontWeight={600}>Create an account</Link>
         </Typography>
+
+        {/* Parents never register: the school creates the account, and the
+            code it hands over is what turns it on. */}
+        <Box sx={{ mt: 2, p: 1.5, borderRadius: 1, bgcolor: 'report.mist', textAlign: 'center' }}>
+          <Typography variant="body2">
+            Parent or guardian?{' '}
+            <Link component={RouterLink} to="/activate" fontWeight={600}>Activate your account</Link>
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block">
+            Use the code your school sent you. Forgot your password? Get a new code there too.
+          </Typography>
+        </Box>
       </Paper>
     </Box>
   );

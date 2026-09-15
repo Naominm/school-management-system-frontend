@@ -18,12 +18,26 @@ export function AuthProvider({ children }) {
    * the console, anyone owing a password change to that form, everyone else
    * to their dashboard.
    */
-  async function login(email, password) {
-    const { data } = await api.post('/auth/login', { email, password });
+  function startSession(data) {
     localStorage.setItem('sms_token', data.token);
     localStorage.setItem('sms_user', JSON.stringify(data.user));
     setUser(data.user);
     return { user: data.user, school: data.school, landing: data.landing || '/' };
+  }
+
+  async function login(email, password) {
+    const { data } = await api.post('/auth/login', { email, password });
+    return startSession(data);
+  }
+
+  /**
+   * Open a parent's session for one of their learners. Every page after this
+   * reads that learner only, in that learner's school; switching is choosing
+   * again.
+   */
+  async function chooseLearner(studentId) {
+    const { data } = await api.post('/auth/guardian/select', { student_id: studentId });
+    return startSession(data);
   }
 
   /**
@@ -47,7 +61,7 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
-  return <AuthContext.Provider value={{ user, login, logout, refreshUser }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, login, logout, refreshUser, startSession, chooseLearner }}>{children}</AuthContext.Provider>;
 }
 
 export const useAuth = () => useContext(AuthContext);
@@ -61,6 +75,11 @@ export function RequireAuth({ children }) {
    * learner keeps the password their teacher typed for them. */
   if (user.must_change_password && pathname !== '/change-password') {
     return <Navigate to="/change-password" replace />;
+  }
+  /* A parent with more than one learner picks one before anything else —
+   * every page shows a single learner's records. */
+  if (user.guardian_id && !user.student_id && pathname !== '/choose-learner') {
+    return <Navigate to="/choose-learner" replace />;
   }
   return children;
 }

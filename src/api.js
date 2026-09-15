@@ -18,6 +18,11 @@ api.interceptors.response.use(
       localStorage.removeItem('sms_user');
       if (!window.location.pathname.startsWith('/login')) window.location.href = '/login';
     }
+    // A parent who has not chosen a learner is sent to choose one.
+    if (err.response?.status === 403 && err.response?.data?.code === 'CHOOSE_LEARNER'
+      && !window.location.pathname.startsWith('/choose-learner')) {
+      window.location.href = '/choose-learner';
+    }
     return Promise.reject(err);
   }
 );

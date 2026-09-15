@@ -73,10 +73,11 @@ export default function ResourcePage() {
       }).filter(([, v]) => v !== undefined)
     );
     try {
-      if (editing.id) await api.put(`/${key}/${editing.id}`, body);
-      else await api.post(`/${key}`, body);
+      const { data } = editing.id ? await api.put(`/${key}/${editing.id}`, body) : await api.post(`/${key}`, body);
       setEditing(null);
       load();
+      // The record saved; the parent on it could not be linked, and the school should know why.
+      if (data?.parent_link_problem) setError(`Saved, but the parent was not linked: ${data.parent_link_problem}`);
     } catch (e) {
       setError(e.response?.data?.error || 'Save failed');
     }

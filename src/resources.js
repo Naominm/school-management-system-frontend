@@ -15,6 +15,7 @@ const RESOURCES = [
       { name: 'first_name', label: 'First name', required: true },
       { name: 'last_name', label: 'Last name', required: true },
       { name: 'class_id', label: 'Class', type: 'ref', ref: 'classes', refLabel: 'name' },
+      { name: 'parent_name', label: 'Parent / guardian name' },
       { name: 'parent_email', label: 'Parent email' },
       { name: 'parent_phone', label: 'Parent phone' },
       { name: 'date_of_birth', label: 'Date of birth', type: 'date' },

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Grid, Paper, Typography, Box, LinearProgress, Stack } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import { Grid, Paper, Typography, Box, LinearProgress, Stack, Button } from '@mui/material';
 import api from '../api';
 import { useAuth } from '../auth';
 import SchoolHeader from '../components/SchoolHeader';
@@ -24,6 +25,29 @@ export default function Dashboard() {
   useEffect(() => {
     if (staff) api.get('/analytics').then((r) => setData(r.data)).catch(() => setData(null));
   }, [staff]);
+
+  if (user?.guardian_id && user?.learner) {
+    const l = user.learner;
+    return (
+      <Box>
+        <SchoolHeader title={`Welcome, ${user.full_name || ''}`} />
+        <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+          <Typography variant="overline" color="text.secondary">Viewing</Typography>
+          <Typography variant="h6">{l.first_name} {l.last_name}</Typography>
+          <Typography color="text.secondary">
+            {[l.class_name, l.admission_number && `Adm. ${l.admission_number}`, l.school_name].filter(Boolean).join(' · ')}
+          </Typography>
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 2 }}>
+            <Button variant="contained" component={RouterLink} to="/report-cards">Report card</Button>
+            <Button variant="outlined" component={RouterLink} to="/progress">Progress</Button>
+            {user.learner_count > 1 && (
+              <Button component={RouterLink} to="/choose-learner">Switch learner</Button>
+            )}
+          </Stack>
+        </Paper>
+      </Box>
+    );
+  }
 
   if (!staff) {
     return (
