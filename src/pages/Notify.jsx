@@ -125,7 +125,10 @@ export default function Notify() {
           ) : (
             <>
               Email is not configured on this server, so notices will be recorded but not delivered.
-              Set <code>SMTP_HOST</code>, <code>SMTP_USER</code> and <code>SMTP_PASS</code> to send them.
+              {audiences?.mail_problem
+                ? <> <strong>{audiences.mail_problem}</strong></>
+                : <> Set <code>MAIL_PROVIDER=brevo</code>, <code>BREVO_API_KEY</code> and{' '}
+                  <code>MAIL_FROM</code> to send them.</>}
             </>
           )}
         </Alert>
