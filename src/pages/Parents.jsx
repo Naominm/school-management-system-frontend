@@ -281,7 +281,7 @@ export default function Parents() {
       <SchoolHeader
         title="Parents & guardians"
         right={(
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ width: { xs: '100%', sm: 'auto' } }}>
           {mayLink && <ImportParents onImported={load} />}
           <Button variant="outlined" disabled={!data?.parents.length}
             onClick={() => exportCsv('parents', [
