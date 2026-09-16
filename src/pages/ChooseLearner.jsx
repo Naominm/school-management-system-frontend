@@ -79,7 +79,11 @@ export default function ChooseLearner() {
           </Paper>
         )}
 
-        {schools.map(({ school, learners }) => (
+        {schools.map(({ school, learners }) => {
+          /* A school can close its parent portal, and a locked school is
+             unavailable to everyone. Either way there is nothing to open. */
+          const closed = school.locked || school.portal_open === false;
+          return (
           <Paper key={school.id} sx={{ mb: 2, overflow: 'hidden' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
               {school.has_logo ? (
@@ -91,7 +95,7 @@ export default function ChooseLearner() {
                 </Avatar>
               )}
               <Typography sx={{ fontWeight: 600, flex: 1, minWidth: 0 }} noWrap>{school.name}</Typography>
-              {school.locked && <Chip size="small" label="Locked" />}
+              {closed && <Chip size="small" label={school.locked ? 'Unavailable' : 'Portal closed'} />}
             </Box>
 
             {learners.map((l) => {
@@ -99,13 +103,13 @@ export default function ChooseLearner() {
               return (
                 <ButtonBase
                   key={l.id}
-                  disabled={school.locked || busyId != null}
+                  disabled={closed || busyId != null}
                   onClick={() => (current ? navigate('/', { replace: true }) : choose(l))}
                   sx={{
                     width: '100%', textAlign: 'left', justifyContent: 'flex-start', gap: 1.5, px: 2, py: 1.5,
                     borderTop: 1, borderColor: 'divider', '&:first-of-type': { borderTop: 0 },
                     '&:hover': { bgcolor: 'action.hover' },
-                    opacity: school.locked ? 0.55 : 1,
+                    opacity: closed ? 0.55 : 1,
                   }}
                 >
                   <Avatar sx={{ bgcolor: 'report.mist', color: 'primary.main', fontWeight: 600, fontSize: 15 }}>
@@ -122,13 +126,16 @@ export default function ChooseLearner() {
                 </ButtonBase>
               );
             })}
-            {school.locked && (
+            {closed && (
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', px: 2, pb: 1.5 }}>
-                This school&apos;s records are unavailable at the moment.
+                {school.locked
+                  ? "This school's records are unavailable at the moment."
+                  : 'This school does not offer parent sign-in. Contact the school office for reports.'}
               </Typography>
             )}
           </Paper>
-        ))}
+          );
+        })}
       </Box>
     </Box>
   );

@@ -12,6 +12,7 @@ export const PAGE_FEATURES = {
   '/merit-list': 'merit_list',
   '/fees': 'fees',
   '/progress': 'progress',
+  '/parents': 'parents',
   '/messages': 'messages',
   '/notices': 'notices',
 };

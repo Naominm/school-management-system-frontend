@@ -34,6 +34,10 @@ export default function Markbook() {
    * entering a whole sheet costs one request instead of one per cell plus a
    * full grid refetch each time. */
   const [edits, setEdits] = useState({});
+  /* The class, term and year the grid on screen was actually loaded for.
+   * The Term and Year boxes are what the teacher is *about* to load; saving
+   * against those wrote a term's marks into a different term. */
+  const [scope, setScope] = useState(null);
   const dirty = Object.keys(edits).length;
   const [importing, setImporting] = useState(false);
   const [importReport, setImportReport] = useState(null);
@@ -83,7 +87,7 @@ export default function Markbook() {
       .map((a) => ({ id: a.learning_area_id, name: a.learning_area_name, can_edit: true }));
   }, [grid, assignments, classId, isManagement]);
 
-  useEffect(() => { setGrid(null); setSubjectId(ALL_SUBJECTS); setEdits({}); }, [classId]);
+  useEffect(() => { setGrid(null); setSubjectId(ALL_SUBJECTS); setEdits({}); setScope(null); }, [classId]);
 
   useEffect(() => {
     if (!dirty) return undefined;
@@ -94,11 +98,18 @@ export default function Markbook() {
 
   async function load() {
     if (!classId) return;
+    /* Marks typed but not saved belong to the period they were typed for. They
+     * used to survive a Load and then be saved against whatever term was in the
+     * boxes — so a term's marks could land silently in another term. */
+    if (dirty && !window.confirm(
+      `You have ${Object.keys(edits).length} unsaved mark(s). Loading will discard them. Continue?`)) return;
     setBusy(true); setError(''); setOk('');
+    setEdits({});
     try {
       const { data } = await api.get('/markbook', { params: { class_id: classId, term, academic_year: year } });
       setGrid(data);
-    } catch (e) { setGrid(null); setError(e.response?.data?.error || 'Could not load markbook'); }
+      setScope({ classId, term, year });
+    } catch (e) { setGrid(null); setScope(null); setError(e.response?.data?.error || 'Could not load markbook'); }
     finally { setBusy(false); }
   }
 
@@ -133,8 +144,11 @@ export default function Markbook() {
 
   function discard() { setEdits({}); setError(''); setOk(''); }
 
-  const className = classes.find((c) => String(c.id) === String(classId))?.name || 'class';
-  const stamp = `${className.replace(/[^\w-]+/g, '_')}-T${term}-${year}`;
+  /* Everything about the sheet on screen — its name, its exports, its saves —
+   * describes the period it was loaded for, not the boxes above it. */
+  const shown = scope || { classId, term, year };
+  const className = classes.find((c) => String(c.id) === String(shown.classId))?.name || 'class';
+  const stamp = `${className.replace(/[^\w-]+/g, '_')}-T${shown.term}-${shown.year}`;
   const scoreOf = (sid, laid) => { const v = cellValue(sid, laid); return v === '' ? null : Number(v); };
 
   function exportMarkbookCsv() {
@@ -162,7 +176,7 @@ export default function Markbook() {
      * by its performance band. Built once rather than searched per cell. */
     const grades = new Map((grid.marks || []).map((m) => [cellKey(m.student_id, m.learning_area_id), m.grade]));
     markbookPdf({
-      className, term, year,
+      className, term: shown.term, year: shown.year,
       students: grid.students,
       areas: columns,
       scoreOf: (sid, laid) => scoreOf(sid, laid),
@@ -175,7 +189,7 @@ export default function Markbook() {
   async function downloadTemplate() {
     try {
       const res = await api.get('/marks/template',
-        { params: { class_id: classId, term, academic_year: year }, responseType: 'blob' });
+        { params: { class_id: shown.classId, term: shown.term, academic_year: shown.year }, responseType: 'blob' });
       const url = URL.createObjectURL(res.data);
       const a = document.createElement('a');
       a.href = url; a.download = `markbook-template-${stamp}.xlsx`; a.click();
@@ -197,7 +211,7 @@ export default function Markbook() {
         fr.readAsDataURL(file);
       });
       const { data } = await api.post('/marks/import',
-        { class_id: classId, term, academic_year: year, data: b64 });
+        { class_id: shown.classId, term: shown.term, academic_year: shown.year, data: b64 });
       setImportReport(data);
       setOk(`Imported ${data.imported} marks (${data.created} new, ${data.updated} updated)`);
       setEdits({});
@@ -221,7 +235,8 @@ export default function Markbook() {
     if (!payload.length) { discard(); return; }
     setSaving(true); setError(''); setOk('');
     try {
-      const { data } = await api.post('/marks/bulk', { term, academic_year: year, marks: payload });
+      const { data } = await api.post('/marks/bulk',
+        { term: shown.term, academic_year: shown.year, marks: payload });
       /* Merge the saved rows into the grid in place — no refetch, so the page
        * does not reload and the teacher keeps their scroll position. */
       setGrid((g) => {
