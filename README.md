@@ -55,7 +55,8 @@ npm run migrate             # applies sql/schema.sql (all 30 tables)
 npm run seed                # admin user + current term + grading scale
 npm run dev                 # http://localhost:4000
 ```
-Default admin (change in `.env` **before** seeding): `admin@school.test` / `Admin@1234`.
+The seed admin comes from `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD`; there is no default and
+seeding stops if they are unset. Never document a real password here — this file is public.
 
 **3. Client**
 ```bash
